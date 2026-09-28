@@ -1052,26 +1052,19 @@ function hasExpenseData(year, month){
   return monthEntries(year, month).some(e => e.type === 'despesa');
 }
 
-function findLastMonthWithExpenseData(){
-  const years = allYears();
-  let last = null;
-  years.forEach(y => {
-    for (let m=1; m<=12; m++){
-      if (hasExpenseData(y, m)) last = { y, m };
-    }
-  });
-  return last;
-}
-
-/* Copia as despesas do último mês com lançamentos para o mês seguinte, como
-   uma base editável (as receitas ficam de fora, sem valores). Roda uma única
-   vez por mês-alvo (marcado em localStorage), mesmo que os itens copiados
-   sejam depois editados/excluídos pelo usuário. */
+/* Copia as despesas do mês ATUAL real (data do sistema) para o mês seguinte
+   real, como base editável (as receitas ficam de fora, sem valores). Roda uma
+   única vez por mês-alvo (marcado em localStorage), mesmo que os itens
+   copiados sejam depois editados/excluídos pelo usuário.
+   Importante: é sempre ancorado na data real de hoje (nunca no "último mês
+   com dados", que poderia encadear mês após mês a cada nova abertura da
+   página e ir parar em anos futuros indevidamente). */
 async function autoSeedNextMonthExpenses(){
-  const last = findLastMonthWithExpenseData();
-  if (!last) return;
+  const now = new Date();
+  const curY = now.getFullYear(), curM = now.getMonth() + 1;
+  if (!hasExpenseData(curY, curM)) return; // nada a copiar ainda no mês atual
 
-  let ny = last.y, nm = last.m + 1;
+  let ny = curY, nm = curM + 1;
   if (nm > 12){ nm = 1; ny += 1; }
 
   const key = monthKey(ny, nm);
@@ -1080,9 +1073,9 @@ async function autoSeedNextMonthExpenses(){
   if (hasExpenseData(ny, nm)) return;
 
   const items = [];
-  const h = histMonth(last.y, last.m);
+  const h = histMonth(curY, curM);
   if (h) h.ei.forEach(it => items.push({ desc: it.d, value: it.v, category: it.c }));
-  monthEntries(last.y, last.m).filter(e => e.type === 'despesa').forEach(e => {
+  monthEntries(curY, curM).filter(e => e.type === 'despesa').forEach(e => {
     items.push({ desc: e.desc, value: Number(e.value) || 0, category: e.category || 'Outros' });
   });
   if (!items.length) return;
@@ -1092,16 +1085,59 @@ async function autoSeedNextMonthExpenses(){
 
   const dateStr = `${ny}-${String(nm).padStart(2,'0')}-01`;
   for (const it of items){
-    await addEntry({ type:'despesa', desc: it.desc, value: it.value, category: it.category || 'Outros', date: dateStr });
+    await addEntry({ type:'despesa', desc: it.desc, value: it.value, category: it.category || 'Outros', date: dateStr, seeded: true });
   }
-  showToast(`Despesas de ${MONTH_FULL[last.m-1]} copiadas como base para ${MONTH_FULL[nm-1]}/${ny} — edite ou exclua o que mudar.`);
+  showToast(`Despesas de ${MONTH_FULL[curM-1]} copiadas como base para ${MONTH_FULL[nm-1]}/${ny} — edite ou exclua o que mudar.`);
+}
+
+/* ============ Limpeza de lançamentos futuros indevidos ============ */
+/* Corrige o encadeamento antigo do auto-preenchimento (que podia ir gerando
+   um mês a mais a cada nova abertura da página, até cair em anos futuros).
+   Roda uma única vez: remove despesas/receitas datadas além do mês seguinte
+   ao mês atual real, e limpa o log de auto-seed correspondente. */
+const PRUNE_FUTURE_KEY = 'livro-caixa-prune-future-v1';
+let pruneFutureDone = false;
+
+async function pruneRunawayFutureEntries(){
+  if (pruneFutureDone) return;
+  if (localStorage.getItem(PRUNE_FUTURE_KEY)) { pruneFutureDone = true; return; }
+  pruneFutureDone = true;
+
+  const now = new Date();
+  const curY = now.getFullYear(), curM = now.getMonth() + 1;
+  let capY = curY, capM = curM + 1;
+  if (capM > 12){ capM = 1; capY += 1; }
+
+  const toRemove = entries.filter(e => {
+    const y = entryYear(e), m = entryMonth(e);
+    if (isNaN(y) || isNaN(m)) return false;
+    return y > capY || (y === capY && m > capM);
+  });
+  for (const e of toRemove){
+    await deleteEntry(e.id);
+  }
+  if (toRemove.length){
+    showToast(`${toRemove.length} lançamento(s) futuro(s) gerados por engano foram removidos.`);
+  }
+
+  const log = loadAutoseedLog().filter(k => {
+    const [y, m] = k.split('-').map(Number);
+    return !(y > capY || (y === capY && m > capM));
+  });
+  saveAutoseedLog(log);
+
+  try{ localStorage.setItem(PRUNE_FUTURE_KEY, '1'); }catch(e){}
 }
 
 function maybeAutoSeed(){
-  if (!autoSeedDone){
-    autoSeedDone = true;
-    autoSeedNextMonthExpenses().catch(e => console.warn('auto-seed falhou', e));
-  }
+  pruneRunawayFutureEntries()
+    .then(() => {
+      if (!autoSeedDone){
+        autoSeedDone = true;
+        autoSeedNextMonthExpenses().catch(e => console.warn('auto-seed falhou', e));
+      }
+    })
+    .catch(e => console.warn('limpeza de lançamentos futuros falhou', e));
   runInitialMonthsCloseMigration().catch(e => console.warn('fechamento de meses falhou', e));
 }
 
@@ -1144,9 +1180,11 @@ async function runInitialMonthsCloseMigration(){
 function renderFilters(){
   const years = allYears();
   if (!selectedYear || !years.includes(selectedYear)){
-    // escolhe o ano mais recente que realmente tem dados, senão o ano atual
-    const withData = years.filter(y => HIST.some(m=>m.y===y) || entries.some(e=>entryYear(e)===y));
-    selectedYear = withData.length ? withData[withData.length-1] : years[years.length-1];
+    // escolhe o ano atual real como padrão; só cai para um ano anterior se
+    // o ano atual não tiver nenhum dado ainda, e nunca escolhe um ano futuro
+    const curYearReal = new Date().getFullYear();
+    const withData = years.filter(y => y <= curYearReal && (HIST.some(m=>m.y===y) || entries.some(e=>entryYear(e)===y)));
+    selectedYear = withData.length ? withData[withData.length-1] : curYearReal;
   }
 
   const yearSelect = document.getElementById('year-select');
