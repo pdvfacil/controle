@@ -936,6 +936,7 @@ async function closeMonth(year, month){
     try{
       await db.collection('livro_caixa_closed_months').doc(key).set({ closed:true, closedAt: new Date().toISOString() });
       renderAll();
+      await autoSeedFromMonth(year, month).catch(e => console.warn('auto-seed pós-encerramento falhou', e));
       return;
     }catch(e){
       console.warn('closed_months write failed, using local fallback', e);
@@ -944,6 +945,7 @@ async function closeMonth(year, month){
   }
   saveClosedLocal(closedMonths);
   renderAll();
+  await autoSeedFromMonth(year, month).catch(e => console.warn('auto-seed pós-encerramento falhou', e));
 }
 
 /* ============ Agregação de dados ============ */
@@ -1061,12 +1063,15 @@ function hasExpenseData(year, month){
    Importante: é sempre ancorado na data real de hoje (nunca no "último mês
    com dados", que poderia encadear mês após mês a cada nova abertura da
    página e ir parar em anos futuros indevidamente). */
-async function autoSeedNextMonthExpenses(){
-  const now = new Date();
-  const curY = now.getFullYear(), curM = now.getMonth() + 1;
-  if (!hasExpenseData(curY, curM)) return; // nada a copiar ainda no mês atual
+/* Copia as despesas de um mês-fonte (srcY, srcM) para o mês seguinte, como
+   base editável. Usada tanto no boot (ancorada na data real) quanto na hora
+   em que o usuário clica "Enviar e encerrar mês" (ancorada no mês que ele
+   acabou de encerrar, projetando o seguinte na hora, sem esperar o próximo
+   carregamento da página). */
+async function autoSeedFromMonth(srcY, srcM){
+  if (!hasExpenseData(srcY, srcM)) return; // nada a copiar ainda desse mês
 
-  let ny = curY, nm = curM + 1;
+  let ny = srcY, nm = srcM + 1;
   if (nm > 12){ nm = 1; ny += 1; }
 
   const key = monthKey(ny, nm);
@@ -1075,9 +1080,9 @@ async function autoSeedNextMonthExpenses(){
   if (hasExpenseData(ny, nm)) return;
 
   const items = [];
-  const h = histMonth(curY, curM);
+  const h = histMonth(srcY, srcM);
   if (h) h.ei.forEach(it => items.push({ desc: it.d, value: it.v, category: it.c }));
-  monthEntries(curY, curM).filter(e => e.type === 'despesa').forEach(e => {
+  monthEntries(srcY, srcM).filter(e => e.type === 'despesa').forEach(e => {
     items.push({ desc: e.desc, value: Number(e.value) || 0, category: e.category || 'Outros' });
   });
   if (!items.length) return;
@@ -1089,7 +1094,12 @@ async function autoSeedNextMonthExpenses(){
   for (const it of items){
     await addEntry({ type:'despesa', desc: it.desc, value: it.value, category: it.category || 'Outros', date: dateStr, seeded: true });
   }
-  showToast(`Despesas de ${MONTH_FULL[curM-1]} copiadas como base para ${MONTH_FULL[nm-1]}/${ny} — edite ou exclua o que mudar.`);
+  showToast(`Despesas de ${MONTH_FULL[srcM-1]} copiadas como base para ${MONTH_FULL[nm-1]}/${ny} — edite ou exclua o que mudar.`);
+}
+
+async function autoSeedNextMonthExpenses(){
+  const now = new Date();
+  await autoSeedFromMonth(now.getFullYear(), now.getMonth() + 1);
 }
 
 /* ============ Limpeza de lançamentos futuros indevidos ============ */
