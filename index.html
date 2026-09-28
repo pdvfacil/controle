@@ -189,6 +189,19 @@
   }
   .paid-toggle input{margin:0; accent-color:var(--income-dark); cursor:pointer;}
   .paid-toggle.is-paid{background:var(--income-soft); color:var(--income-dark);}
+  .paid-toggle.is-static{cursor:default;}
+
+  .month-close-bar{
+    flex:1 1 100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:8px 12px; border-radius:10px; background:var(--surface-2); border:1px dashed var(--border);
+    font-size:.76rem; color:var(--ink-muted);
+  }
+  .month-close-bar.is-closed{border-style:solid; justify-content:flex-start;}
+  .btn-close-month{
+    border:none; border-radius:999px; padding:6px 14px; font-size:.76rem; font-weight:700;
+    cursor:pointer; background:var(--accent); color:var(--accent-ink); white-space:nowrap; font-family:inherit;
+  }
+  .btn-close-month:hover{filter:brightness(.95);}
 
   .tx-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:12px;}
   table.tx{width:100%; border-collapse:collapse; font-size:.84rem; min-width:560px;}
@@ -223,6 +236,7 @@
   /* Em telas de celular a tabela vira uma lista de cartões, sem precisar
      rolar pro lado para ver as colunas. */
   @media (max-width:600px){
+    .month-close-bar{flex-wrap:wrap;}
     .tx-table-wrap{overflow-x:visible; border:none;}
     table.tx{min-width:0; width:100%; border-collapse:separate; border-spacing:0 8px;}
     table.tx thead{display:none;}
@@ -851,13 +865,12 @@ function initPaidStorage(){
 
 function isPaid(id){ return !!paidMap[id]; }
 
-async function togglePaid(id){
-  const next = !isPaid(id);
-  paidMap = { ...paidMap, [id]: next };
+async function setPaid(id, value){
+  paidMap = { ...paidMap, [id]: value };
 
   if (db && !usingLocal && !usingLocalPaid){
     try{
-      await db.collection('paid').doc(String(id)).set({ paid: next });
+      await db.collection('paid').doc(String(id)).set({ paid: value });
       return;
     }catch(e){
       console.warn('paid write failed, using local fallback', e);
@@ -865,6 +878,69 @@ async function togglePaid(id){
     }
   }
   savePaidLocal(paidMap);
+}
+
+async function togglePaid(id){
+  await setPaid(id, !isPaid(id));
+  renderAll();
+}
+
+/* ============ Meses encerrados (fecha o mês, trava a edição de status) ============ */
+let closedMonths = {};
+let usingLocalClosed = false;
+const CLOSED_LOCAL_KEY = 'livro-caixa-closed-months-v1';
+
+function loadClosedLocal(){
+  try{
+    const raw = localStorage.getItem(CLOSED_LOCAL_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveClosedLocal(map){
+  try{ localStorage.setItem(CLOSED_LOCAL_KEY, JSON.stringify(map)); }catch(e){}
+}
+
+function initClosedStorage(){
+  if (db && !usingLocal){
+    try{
+      db.collection('closed_months').limit(500).onSnapshot(
+        snap => {
+          const map = {};
+          snap.docs.forEach(d => { map[d.id] = !!(d.data().closed); });
+          closedMonths = map;
+          renderAll();
+        },
+        err => {
+          console.warn('closed_months snapshot error, falling back to local', err);
+          usingLocalClosed = true;
+          closedMonths = loadClosedLocal();
+          renderAll();
+        }
+      );
+      return;
+    }catch(e){ /* cai para o fallback local abaixo */ }
+  }
+  usingLocalClosed = true;
+  closedMonths = loadClosedLocal();
+}
+
+function isMonthClosed(year, month){ return !!closedMonths[monthKey(year, month)]; }
+
+async function closeMonth(year, month){
+  const key = monthKey(year, month);
+  closedMonths = { ...closedMonths, [key]: true };
+
+  if (db && !usingLocal && !usingLocalClosed){
+    try{
+      await db.collection('closed_months').doc(key).set({ closed:true, closedAt: new Date().toISOString() });
+      renderAll();
+      return;
+    }catch(e){
+      console.warn('closed_months write failed, using local fallback', e);
+      usingLocalClosed = true;
+    }
+  }
+  saveClosedLocal(closedMonths);
   renderAll();
 }
 
@@ -1022,9 +1098,46 @@ async function autoSeedNextMonthExpenses(){
 }
 
 function maybeAutoSeed(){
-  if (autoSeedDone) return;
-  autoSeedDone = true;
-  autoSeedNextMonthExpenses().catch(e => console.warn('auto-seed falhou', e));
+  if (!autoSeedDone){
+    autoSeedDone = true;
+    autoSeedNextMonthExpenses().catch(e => console.warn('auto-seed falhou', e));
+  }
+  runInitialMonthsCloseMigration().catch(e => console.warn('fechamento de meses falhou', e));
+}
+
+/* ============ Encerramento inicial dos meses passados ============ */
+/* Roda uma única vez: marca como PAGO e encerra (trava) todos os meses com
+   despesas até o mês atual (inclusive), deixando só o mês seguinte (o que
+   está entrando) aberto para marcar pago/a pagar manualmente. */
+const CLOSE_MIGRATION_KEY = 'livro-caixa-close-migration-v1';
+let closeMigrationDone = false;
+
+async function runInitialMonthsCloseMigration(){
+  if (closeMigrationDone) return;
+  if (localStorage.getItem(CLOSE_MIGRATION_KEY)) { closeMigrationDone = true; return; }
+  closeMigrationDone = true;
+
+  const now = new Date();
+  const curY = now.getFullYear(), curM = now.getMonth() + 1;
+
+  const targets = [];
+  allYears().forEach(y => {
+    for (let m = 1; m <= 12; m++){
+      if (y > curY || (y === curY && m > curM)) continue; // não mexe no mês que está entrando nem no futuro
+      if (hasExpenseData(y, m)) targets.push({ y, m });
+    }
+  });
+
+  for (const t of targets){
+    const rows = allTxForYear(t.y).filter(r => r.type === 'despesa' && r.month === t.m);
+    for (const r of rows){
+      if (!isPaid(r.id)) await setPaid(r.id, true);
+    }
+    if (!isMonthClosed(t.y, t.m)) await closeMonth(t.y, t.m);
+  }
+
+  try{ localStorage.setItem(CLOSE_MIGRATION_KEY, '1'); }catch(e){}
+  renderAll();
 }
 
 /* ============ Render: seletores de ano e mês ============ */
@@ -1225,6 +1338,14 @@ function renderExpenseTable(){
   const pendingTotal = total - paidTotal;
   const summaryEl = document.getElementById('paid-summary');
   if (summaryEl){
+    let closeBar = '';
+    if (selectedMonth){
+      if (isMonthClosed(selectedYear, selectedMonth)){
+        closeBar = `<div class="month-close-bar is-closed">🔒 Mês encerrado — os status de pagamento não podem mais ser alterados.</div>`;
+      } else if (rows.length){
+        closeBar = `<div class="month-close-bar"><span>Quando fechar as contas do mês, encerre para travar os status.</span><button type="button" class="btn-close-month" id="btn-close-month">Enviar e encerrar mês</button></div>`;
+      }
+    }
     summaryEl.innerHTML = `
       <div class="paid-stat is-paid">
         <span class="paid-stat-label">Pago</span>
@@ -1234,7 +1355,16 @@ function renderExpenseTable(){
         <span class="paid-stat-label">A pagar</span>
         <span class="paid-stat-value num">${BRL.format(pendingTotal)}</span>
       </div>
+      ${closeBar}
     `;
+    const closeBtn = document.getElementById('btn-close-month');
+    if (closeBtn){
+      closeBtn.addEventListener('click', () => {
+        if (confirm(`Encerrar ${MONTH_FULL[selectedMonth-1]}/${selectedYear}? Depois disso não será mais possível alterar os status de pago/a pagar desse mês.`)){
+          closeMonth(selectedYear, selectedMonth);
+        }
+      });
+    }
   }
 
   const body = document.getElementById('exp-body');
@@ -1244,13 +1374,17 @@ function renderExpenseTable(){
   }
   body.innerHTML = rows.map(r => {
     const paid = isPaid(r.id);
+    const locked = isMonthClosed(r.year, r.month);
+    const statusCell = locked
+      ? `<span class="paid-toggle is-static ${paid ? 'is-paid' : ''}">${paid ? '✓ Pago' : 'A pagar'}</span>`
+      : `<label class="paid-toggle ${paid ? 'is-paid' : ''}"><input type="checkbox" data-paid-toggle="${r.id}" ${paid ? 'checked' : ''}>${paid ? '✓ Pago' : 'A pagar'}</label>`;
     return `
     <tr>
       <td class="cell-month">${MONTH_ABBR[r.month-1]}/${String(r.year).slice(2)}</td>
       <td class="tx-desc">${escapeHtml(r.desc)}</td>
       <td class="tag-cat">${r.category ? escapeHtml(r.category) : '—'}</td>
       <td class="amt num despesa">- ${BRL2.format(r.value)}</td>
-      <td class="cell-status"><label class="paid-toggle ${paid ? 'is-paid' : ''}"><input type="checkbox" data-paid-toggle="${r.id}" ${paid ? 'checked' : ''}>${paid ? '✓ Pago' : 'A pagar'}</label></td>
+      <td class="cell-status">${statusCell}</td>
       <td class="cell-actions">${r.manual ? `<span class="row-actions"><button class="edit-btn" data-edit-exp="${r.id}" title="Editar despesa" aria-label="Editar despesa">✎</button><button class="del-btn" data-del="${r.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span>` : ''}</td>
     </tr>
   `;
@@ -1485,6 +1619,7 @@ async function boot(){
   booted = true;
   initStorage();
   initPaidStorage();
+  initClosedStorage();
   renderAll();
 }
 
