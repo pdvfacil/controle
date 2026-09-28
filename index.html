@@ -1,0 +1,1504 @@
+<title>Livro de Caixa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1b3fe0; --surface:#ffffff; --surface-2:#eef1fb; --border:#e1e6f6;
+    --ink:#151f45; --ink-2:#47517a; --ink-muted:#171717;
+    --accent:#3cb043; --accent-ink:#0a2a10; --accent-soft:#e3f7e4;
+    --income:#3cb043; --income-ink:#0a2a10; --income-soft:#e3f7e4; --income-dark:#2b8930;
+    --expense:#e53935; --expense-ink:#ffffff; --expense-soft:#fde8e7; --expense-dark:#c62828;
+    --grid:#e3e7f5; --shadow:0 4px 12px rgba(10,20,80,.12), 0 22px 46px -22px rgba(10,20,90,.4);
+    --cat-1:#2f5fff; --cat-2:#22b8e0; --cat-3:#17a398; --cat-4:#8b5cf6;
+    --cat-5:#17203a; --cat-6:#c6e23a; --cat-7:#8a93b8; --cat-8:#f2b705;
+    --pop-bg:#151f45; --pop-ink:#ffffff;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0a1330; --surface:#131c40; --surface-2:#1a244d; --border:#2b3768;
+      --ink:#eef1fb; --ink-2:#c3c9e8; --ink-muted:#e4e6ef;
+      --accent:#5fd068; --accent-ink:#062710; --accent-soft:#123320;
+      --income:#5fd068; --income-ink:#062710; --income-soft:#123320; --income-dark:#7ee28a;
+      --expense:#ff6b6b; --expense-ink:#2a0606; --expense-soft:#3a1414; --expense-dark:#ff9494;
+      --grid:#26305c; --shadow:0 1px 2px rgba(0,0,0,.35), 0 16px 32px -16px rgba(0,0,0,.6);
+      --cat-1:#5b8dff; --cat-2:#4fd0f0; --cat-3:#2fd9c4; --cat-4:#a78bfa;
+      --cat-5:#e7e9f2; --cat-6:#d9ef6a; --cat-7:#9aa3c4; --cat-8:#ffd24d;
+      --pop-bg:#eef1fb; --pop-ink:#0a1330;
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a1330; --surface:#131c40; --surface-2:#1a244d; --border:#2b3768;
+    --ink:#eef1fb; --ink-2:#c3c9e8; --ink-muted:#e4e6ef;
+    --accent:#5fd068; --accent-ink:#062710; --accent-soft:#123320;
+    --income:#5fd068; --income-ink:#062710; --income-soft:#123320; --income-dark:#7ee28a;
+    --expense:#ff6b6b; --expense-ink:#2a0606; --expense-soft:#3a1414; --expense-dark:#ff9494;
+    --grid:#26305c; --shadow:0 1px 2px rgba(0,0,0,.35), 0 16px 32px -16px rgba(0,0,0,.6);
+    --cat-1:#5b8dff; --cat-2:#4fd0f0; --cat-3:#2fd9c4; --cat-4:#a78bfa;
+    --cat-5:#e7e9f2; --cat-6:#d9ef6a; --cat-7:#9aa3c4; --cat-8:#ffd24d;
+    --pop-bg:#eef1fb; --pop-ink:#0a1330;
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    padding-inline:0; margin:0;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding-inline:20px;}
+  h1,h2,h3{font-family:"Fraunces", Georgia, serif; font-weight:600; text-wrap:balance; margin:0;}
+  .num{font-family:"IBM Plex Mono", "IBM Plex Sans", monospace; font-variant-numeric:tabular-nums;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:30;
+    background:color-mix(in oklab, var(--bg) 92%, transparent);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid color-mix(in oklab, white 18%, transparent);
+  }
+  .top-inner{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding-block:14px; flex-wrap:wrap;
+  }
+  .brand{display:flex; flex-direction:column; gap:2px;}
+  .brand h1{font-size:1.5rem; letter-spacing:-.01em; color:#ffffff;}
+  .brand p{margin:0; font-size:.8rem; color:color-mix(in oklab, white 72%, transparent);}
+  #current-user-label{font-weight:700; color:#ffffff;}
+  .top-actions{display:flex; gap:10px; flex-wrap:wrap;}
+
+  .btn{
+    appearance:none; border:none; cursor:pointer; border-radius:9px;
+    padding:10px 18px; font-size:.86rem; font-weight:700; font-family:inherit;
+    display:inline-flex; align-items:center; gap:8px; transition:filter .15s, transform .1s, box-shadow .15s;
+    white-space:nowrap; letter-spacing:.01em;
+  }
+  .btn:active{transform:translateY(1px); box-shadow:none !important;}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .btn-expense{background:var(--expense); color:var(--expense-ink); box-shadow:0 3px 10px -3px color-mix(in oklab, var(--expense) 65%, transparent);}
+  .btn-income{background:var(--income); color:var(--income-ink); box-shadow:0 3px 10px -3px color-mix(in oklab, var(--income) 65%, transparent);}
+  .btn-expense:hover, .btn-income:hover{filter:brightness(1.06);}
+  .btn-ghost{background:var(--surface-2); color:var(--ink);}
+  .btn-ghost:hover{filter:brightness(0.97);}
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .btn-ghost:hover{filter:brightness(1.15);} }
+  :root[data-theme="dark"] .btn-ghost:hover{filter:brightness(1.15);}
+  .plus{font-size:1.05em; line-height:1;}
+
+  /* ---------- Filtros: ano / mês ---------- */
+  .filters{display:flex; gap:8px; padding-block:12px 4px; flex-wrap:wrap;}
+  .pill-select{position:relative; flex:0 0 auto;}
+  .pill-select select{
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    border:1px solid var(--border); background:var(--surface); color:var(--ink);
+    border-radius:9px; padding:8px 34px 8px 16px; font-size:.85rem; font-weight:600;
+    cursor:pointer; font-family:"IBM Plex Mono", monospace; min-width:0;
+  }
+  .pill-select select:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .pill-select.is-set select{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .pill-select::after{
+    content:"▾"; position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    font-size:.7rem; color:var(--ink-muted); pointer-events:none;
+  }
+  .pill-select.is-set::after{color:var(--accent-ink);}
+
+  main{padding-block:20px 64px;}
+
+  /* ---------- KPI grid ---------- */
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-block-end:20px;}
+  @media (max-width:760px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+  .kpi{
+    background:var(--surface); border:1px solid var(--border); border-radius:18px;
+    padding:16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;
+  }
+  .kpi .label{font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); font-weight:600;}
+  .kpi .value{font-size:1.5rem; font-weight:600;}
+  .kpi .sub{font-size:.76rem; color:var(--ink-muted);}
+  .kpi.saldo-pos .value{color:var(--income-dark);}
+  .kpi.saldo-neg .value{color:var(--expense-dark);}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:20px; box-shadow:var(--shadow); margin-block-end:16px;
+  }
+  .card-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-block-end:14px; flex-wrap:wrap;}
+  .card-head h2{font-size:1.05rem;}
+  .card-head .hint{font-size:.78rem; color:var(--ink-muted);}
+  .legend{display:flex; gap:16px; font-size:.78rem; color:var(--ink-2); flex-wrap:wrap;}
+  .legend .dot{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; vertical-align:middle;}
+
+  .charts-row{display:grid; grid-template-columns:1.3fr 1fr; gap:16px;}
+  @media (max-width:820px){ .charts-row{grid-template-columns:1fr;} }
+
+  svg.chart{width:100%; height:auto; display:block; overflow:visible;}
+  .axis-label{font-size:9px; fill:var(--ink-muted); font-family:"IBM Plex Sans", sans-serif;}
+  .grid-line{stroke:var(--grid); stroke-width:1;}
+  .zero-line{stroke:var(--ink-muted); stroke-width:1;}
+  .bar-tip{cursor:pointer;}
+  .val-label{font-size:9.5px; font-weight:600; font-family:"IBM Plex Mono", monospace; fill:var(--ink-2);}
+
+  #tooltip{
+    position:fixed; pointer-events:none; background:var(--pop-bg); color:var(--pop-ink);
+    padding:6px 10px; border-radius:8px; font-size:.76rem; z-index:100; opacity:0;
+    transition:opacity .08s; transform:translate(-50%,-110%); white-space:nowrap;
+    font-family:"IBM Plex Mono", monospace;
+  }
+
+  .cat-row{display:flex; align-items:center; gap:10px; padding-block:7px;}
+  .cat-row .cat-name{flex:0 0 128px; font-size:.8rem; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .cat-row .cat-bar-track{flex:1; background:var(--surface-2); border-radius:5px; height:16px; position:relative; overflow:hidden;}
+  .cat-row .cat-bar-fill{height:100%; border-radius:5px 0 0 5px; min-width:3px;}
+  .cat-row .cat-val{flex:0 0 auto; font-size:.78rem; font-weight:600; width:84px; text-align:right;}
+
+  /* ---------- Transactions ---------- */
+  .tx-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:820px){ .tx-row{grid-template-columns:1fr;} }
+  .tx-card{margin-block-end:0;}
+  .tx-card-expense{border-top:3px solid var(--expense);}
+  .tx-card-income{border-top:3px solid var(--income);}
+  .card-head h2{display:flex; align-items:center; gap:8px;}
+  .card-head h2 .dot{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .search{
+    width:100%; border:1px solid var(--border); background:var(--surface-2);
+    color:var(--ink); border-radius:10px; padding:9px 13px; font-size:.84rem; font-family:inherit;
+    margin-block-end:12px;
+  }
+  .search:focus-visible{outline:2px solid var(--accent);}
+  .search::placeholder{color:var(--ink-muted); opacity:1;}
+
+  /* ---------- Resumo pago / a pagar ---------- */
+  .paid-summary{display:flex; gap:10px; margin-block-end:12px; flex-wrap:wrap;}
+  .paid-stat{
+    flex:1 1 130px; display:flex; flex-direction:column; gap:2px;
+    padding:8px 12px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border);
+  }
+  .paid-stat .paid-stat-label{font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:600;}
+  .paid-stat .paid-stat-value{font-size:1rem; font-weight:700;}
+  .paid-stat.is-paid .paid-stat-value{color:var(--income-dark);}
+  .paid-stat.is-pending .paid-stat-value{color:var(--expense-dark);}
+
+  .paid-toggle{
+    display:inline-flex; align-items:center; gap:5px; border:1px solid transparent;
+    background:var(--expense-soft); color:var(--expense-dark); border-radius:999px;
+    padding:4px 10px 4px 8px; font-size:.7rem; font-weight:700; cursor:pointer;
+    white-space:nowrap; user-select:none; transition:background .15s, color .15s;
+  }
+  .paid-toggle input{margin:0; accent-color:var(--income-dark); cursor:pointer;}
+  .paid-toggle.is-paid{background:var(--income-soft); color:var(--income-dark);}
+
+  .tx-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:12px;}
+  table.tx{width:100%; border-collapse:collapse; font-size:.84rem; min-width:560px;}
+  table.tx th{
+    text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--ink-muted); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--border);
+    background:var(--surface-2); position:sticky; top:0;
+  }
+  table.tx td{padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  table.tx tbody tr:last-child td{border-bottom:none;}
+  table.tx tbody tr:hover{background:var(--surface-2);}
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px;
+    font-size:.72rem; font-weight:600;
+  }
+  .badge.despesa{background:var(--expense-soft); color:var(--expense-dark);}
+  .badge.receita{background:var(--income-soft); color:var(--income-dark);}
+  .tag-cat{font-size:.72rem; color:var(--ink-muted);}
+  table.tx td.tx-desc{text-transform:uppercase; letter-spacing:.01em;}
+  .amt{font-weight:600; text-align:right; white-space:nowrap;}
+  .amt.despesa{color:var(--expense-dark);}
+  .amt.receita{color:var(--income-dark);}
+  .row-actions{display:flex; gap:2px; justify-content:flex-end;}
+  .del-btn, .edit-btn{
+    border:none; background:transparent; color:var(--ink-muted); cursor:pointer;
+    font-size:.95rem; padding:3px 7px; border-radius:6px; line-height:1;
+  }
+  .del-btn:hover{background:var(--surface-2); color:var(--expense);}
+  .edit-btn:hover{background:var(--surface-2); color:var(--accent);}
+  .empty-row td{text-align:center; color:var(--ink-muted); padding:28px 12px;}
+
+  /* Em telas de celular a tabela vira uma lista de cartões, sem precisar
+     rolar pro lado para ver as colunas. */
+  @media (max-width:600px){
+    .tx-table-wrap{overflow-x:visible; border:none;}
+    table.tx{min-width:0; width:100%; border-collapse:separate; border-spacing:0 8px;}
+    table.tx thead{display:none;}
+    table.tx tbody{display:block;}
+    table.tx tr{
+      display:flex; flex-wrap:wrap; align-items:center; gap:1px 10px;
+      border:1px solid var(--border); border-radius:12px; padding:10px 12px;
+      background:var(--surface);
+    }
+    table.tx tr:hover{background:var(--surface);}
+    table.tx tr.empty-row{display:block; text-align:center; padding:24px 12px; border-style:dashed;}
+    table.tx tr.empty-row td{padding:0;}
+    table.tx td{border:none; padding:0; vertical-align:baseline;}
+    table.tx td.tx-desc{order:1; flex:1 1 100%; text-align:left; white-space:normal;}
+    table.tx td.cell-month{order:3; flex:0 0 auto; font-size:.72rem; color:var(--ink-muted);}
+    table.tx td.tag-cat{order:3; flex:0 0 auto;}
+    table.tx td.cell-month::after{content:" ·"; margin-inline-end:6px;}
+    table.tx td.amt{order:2; flex:0 0 auto; text-align:left; padding-block:2px 2px;}
+    table.tx td.cell-status{order:2; flex:0 0 auto; margin-inline-start:auto;}
+    table.tx td.cell-actions{order:4; flex:0 0 auto; margin-inline-start:auto;}
+    table.tx td.cell-actions .row-actions{justify-content:flex-end;}
+  }
+
+  .footnote{font-size:.78rem; color:var(--ink-muted); margin-block-start:10px; line-height:1.5;}
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(10,14,12,.5); backdrop-filter:blur(2px);
+    display:flex; align-items:flex-end; justify-content:center; z-index:200;
+  }
+  @media (min-width:640px){ .modal-backdrop{align-items:center;} }
+  .modal{
+    background:var(--surface); width:100%; max-width:440px; border-radius:20px 20px 0 0;
+    padding:22px 22px calc(22px + env(safe-area-inset-bottom,0px)); box-shadow:var(--shadow);
+    max-height:88vh; overflow-y:auto;
+  }
+  @media (min-width:640px){ .modal{border-radius:18px;} }
+  .modal h3{font-size:1.15rem; margin-block-end:4px;}
+  .modal .modal-sub{font-size:.8rem; color:var(--ink-muted); margin-block-end:16px;}
+  .field{display:flex; flex-direction:column; gap:5px; margin-block-end:14px;}
+  .field label{font-size:.76rem; font-weight:600; color:var(--ink-2);}
+  .field input, .field select{
+    border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:.9rem;
+    background:var(--bg); color:var(--ink); font-family:inherit;
+  }
+  .field input:focus-visible, .field select:focus-visible{outline:2px solid var(--accent);}
+  .modal-actions{display:flex; gap:10px; margin-block-start:8px;}
+  .modal-actions .btn{flex:1; justify-content:center;}
+
+  #toast{
+    position:fixed; bottom:calc(20px + env(safe-area-inset-bottom,0px)); left:50%;
+    transform:translateX(-50%) translateY(20px); background:var(--pop-bg); color:var(--pop-ink);
+    padding:11px 18px; border-radius:12px; font-size:.84rem; font-weight:500; z-index:300;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Tela de login ---------- */
+  #auth-gate{
+    min-height:100dvh; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px; padding-block:calc(24px + env(safe-area-inset-top,0px)) calc(24px + env(safe-area-inset-bottom,0px));
+  }
+  .auth-card{
+    width:100%; max-width:360px; background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:28px 26px; box-shadow:var(--shadow); text-align:center;
+  }
+  .auth-icon{font-size:1.8rem; margin-block-end:6px;}
+  .auth-card h1{font-size:1.3rem; margin-block-end:6px;}
+  .auth-sub{font-size:.82rem; color:var(--ink-muted); margin:0 0 18px; line-height:1.5;}
+  .auth-card .field{text-align:left;}
+  .auth-remember{
+    display:flex; align-items:center; gap:8px; font-size:.8rem; color:var(--ink-2);
+    text-align:left; margin-block-end:16px; cursor:pointer;
+  }
+  .auth-remember input{margin:0; accent-color:var(--accent); cursor:pointer;}
+  .auth-error{color:var(--expense-dark); font-size:.8rem; margin:-6px 0 14px; text-align:left;}
+  .auth-submit{width:100%; justify-content:center;}
+  #auth-gate[hidden]{display:none!important;}
+
+  [hidden]{display:none!important;}
+</style>
+
+<div id="tooltip" role="status"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div id="auth-gate">
+  <form class="auth-card" id="auth-form">
+    <div class="auth-icon">🔒</div>
+    <h1>Livro de Caixa</h1>
+    <p class="auth-sub">Acesso restrito. Escolha seu usuário e digite a senha.</p>
+    <div class="field">
+      <label for="auth-user">Usuário</label>
+      <select id="auth-user"></select>
+    </div>
+    <div class="field">
+      <label for="auth-pass">Senha</label>
+      <input id="auth-pass" type="password" required autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <label class="auth-remember">
+      <input type="checkbox" id="auth-remember" checked>
+      Manter conectado neste navegador
+    </label>
+    <p class="auth-error" id="auth-error" hidden>Usuário ou senha incorretos. Tente novamente.</p>
+    <button type="submit" class="btn btn-income auth-submit" disabled>Carregando…</button>
+  </form>
+</div>
+
+<div id="app-shell" hidden>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <div class="brand">
+      <h1>Livro de Caixa</h1>
+      <p>Receitas e despesas da família, mês a mês desde 2022 · <span id="current-user-label"></span></p>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-expense" id="btn-open-expense" type="button"><span class="plus">+</span> Despesa</button>
+      <button class="btn btn-income" id="btn-open-income" type="button"><span class="plus">+</span> Receita</button>
+      <button class="btn btn-ghost" id="btn-settings" type="button" title="Configurações" aria-label="Configurações">⚙ Config</button>
+      <button class="btn btn-ghost" id="btn-logout" type="button" title="Sair" aria-label="Sair">⏻ Sair</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="filters">
+      <div class="pill-select" id="year-select-wrap">
+        <select id="year-select" aria-label="Selecionar ano"></select>
+      </div>
+      <div class="pill-select" id="month-select-wrap">
+        <select id="month-select" aria-label="Selecionar mês"></select>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="kpis" id="kpis"></section>
+
+  <div class="tx-row">
+    <div class="card tx-card tx-card-expense">
+      <div class="card-head">
+        <h2><span class="dot" style="background:var(--expense)"></span>Despesas</h2>
+        <span class="hint" id="exp-hint"></span>
+      </div>
+      <div class="paid-summary" id="paid-summary"></div>
+      <input class="search" id="exp-search" type="search" placeholder="Buscar despesa…" aria-label="Buscar despesa">
+      <div class="tx-table-wrap">
+        <table class="tx">
+          <thead>
+            <tr><th>Mês</th><th>Descrição</th><th>Categoria</th><th style="text-align:right">Valor</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="exp-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card tx-card tx-card-income">
+      <div class="card-head">
+        <h2><span class="dot" style="background:var(--income)"></span>Receitas</h2>
+        <span class="hint" id="inc-hint"></span>
+      </div>
+      <input class="search" id="inc-search" type="search" placeholder="Buscar receita…" aria-label="Buscar receita">
+      <div class="tx-table-wrap">
+        <table class="tx">
+          <thead>
+            <tr><th>Mês</th><th>Descrição</th><th style="text-align:right">Valor</th><th></th></tr>
+          </thead>
+          <tbody id="inc-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-head">
+        <h2>Receitas × despesas por mês</h2>
+        <div class="legend">
+          <span><span class="dot" style="background:var(--income)"></span>Receita</span>
+          <span><span class="dot" style="background:var(--expense)"></span>Despesa</span>
+        </div>
+      </div>
+      <svg class="chart" id="chart-bars" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Para onde foi o dinheiro</h2>
+        <span class="hint" id="cat-hint"></span>
+      </div>
+      <div id="cat-list"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Saldo acumulado no ano</h2>
+      <span class="hint">Receitas − despesas, mês a mês</span>
+    </div>
+    <svg class="chart" id="chart-saldo" viewBox="0 0 640 150" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+
+</main>
+
+<!-- Modal: nova despesa -->
+<div class="modal-backdrop" id="modal-expense" hidden>
+  <form class="modal" id="form-expense">
+    <h3 id="exp-modal-title">Registrar despesa</h3>
+    <p class="modal-sub" id="exp-modal-sub">Adiciona um novo gasto ao mês correspondente.</p>
+    <div class="field">
+      <label for="exp-desc">Descrição</label>
+      <input id="exp-desc" type="text" required placeholder="Ex.: Supermercado, Ampla, Escola…" maxlength="80" style="text-transform:uppercase;">
+    </div>
+    <div class="field">
+      <label for="exp-value">Valor (R$)</label>
+      <input id="exp-value" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0,00">
+    </div>
+    <div class="field">
+      <label for="exp-cat">Categoria</label>
+      <select id="exp-cat"></select>
+    </div>
+    <div class="field">
+      <label for="exp-date">Data</label>
+      <input id="exp-date" type="date" required>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" data-close="modal-expense">Cancelar</button>
+      <button type="submit" class="btn btn-expense" id="exp-submit-btn">Salvar despesa</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: nova receita -->
+<div class="modal-backdrop" id="modal-income" hidden>
+  <form class="modal" id="form-income">
+    <h3 id="inc-modal-title">Registrar receita</h3>
+    <p class="modal-sub" id="inc-modal-sub">Adiciona uma nova entrada de dinheiro ao mês correspondente.</p>
+    <div class="field">
+      <label for="inc-desc">Descrição</label>
+      <input id="inc-desc" type="text" required placeholder="Ex.: Salário, Comissão, PG Camila…" maxlength="80" style="text-transform:uppercase;">
+    </div>
+    <div class="field">
+      <label for="inc-value">Valor (R$)</label>
+      <input id="inc-value" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0,00">
+    </div>
+    <div class="field">
+      <label for="inc-date">Data</label>
+      <input id="inc-date" type="date" required>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" data-close="modal-income">Cancelar</button>
+      <button type="submit" class="btn btn-income" id="inc-submit-btn">Salvar receita</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: configurações (trocar senha) -->
+<div class="modal-backdrop" id="modal-settings" hidden>
+  <form class="modal" id="form-settings">
+    <h3>Configurações de acesso</h3>
+    <p class="modal-sub">Jaylson e Camila são administradores e podem trocar a senha de qualquer um dos dois.</p>
+    <div class="field">
+      <label for="settings-user">Usuário</label>
+      <select id="settings-user"></select>
+    </div>
+    <div class="field">
+      <label for="settings-pass">Nova senha</label>
+      <input id="settings-pass" type="password" required minlength="4" placeholder="Nova senha">
+    </div>
+    <div class="field">
+      <label for="settings-pass2">Confirmar nova senha</label>
+      <input id="settings-pass2" type="password" required minlength="4" placeholder="Repita a nova senha">
+    </div>
+    <p class="auth-error" id="settings-error" hidden>As senhas não coincidem.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" data-close="modal-settings">Cancelar</button>
+      <button type="submit" class="btn btn-income">Salvar senha</button>
+    </div>
+  </form>
+</div>
+
+</div><!-- /#app-shell -->
+
+<script>
+/* ============ Dados históricos (planilhas 2022–2026) ============ */
+const HIST = [{"y":2022,"m":12,"te":5016.0,"ti":3334.0,"ei":[{"d":"COMPRA DO MÊS","v":1150.0,"c":"Compras e Pessoal"},{"d":"ESCOLA KAYQUI","v":265.0,"c":"Educação"},{"d":"ESTACIONAMENTO","v":200.0,"c":"Transporte"},{"d":"PLANO DE SAUDE","v":441.0,"c":"Outros"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"GIGALINE","v":70.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1342.0,"c":"Cartão de Crédito"},{"d":"PASSEIO","v":130.0,"c":"Compras e Pessoal"},{"d":"AMPLA","v":265.0,"c":"Moradia"},{"d":"GAS","v":90.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tim","v":46.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":40.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":75.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":400.0,"c":"Família e Doações"},{"d":"escolinha futebol","v":65.0,"c":"Educação"}],"ii":[{"d":"PG JAYLSON","v":1909.0},{"d":"COMISSÃO","v":50.0},{"d":"COMISSÃO CAMILA","v":1000.0},{"d":"PG CAMILA dia 10","v":1000.0},{"d":"THIAGO CEL","v":375.0}]},{"y":2023,"m":1,"te":2188.0,"ti":1375.0,"ei":[{"d":"PLANO DE SAUDE","v":441.0,"c":"Outros"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"GIGALINE","v":70.0,"c":"Moradia"},{"d":"PASSEIO","v":130.0,"c":"Compras e Pessoal"},{"d":"AMPLA","v":346.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":40.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":89.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":400.0,"c":"Família e Doações"},{"d":"escolinha futebol","v":70.0,"c":"Educação"}],"ii":[{"d":"COMISSÃO CAMILA","v":1500.0},{"d":"PG CAMILA dia 10","v":1000.0},{"d":"THIAGO CEL","v":375.0}]},{"y":2023,"m":2,"te":2970.0,"ti":3300.0,"ei":[{"d":"PLANO DE SAUDE","v":441.0,"c":"Outros"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":580.0,"c":"Cartão de Crédito"},{"d":"PASSEIO","v":130.0,"c":"Compras e Pessoal"},{"d":"AMPLA","v":356.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":40.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"CARTÃO NUBANK","v":251.0,"c":"Cartão de Crédito"},{"d":"glaucia","v":400.0,"c":"Família e Doações"},{"d":"escolinha futebol","v":70.0,"c":"Educação"}],"ii":[{"d":"PG JAYLSON","v":1300.0},{"d":"COMISSÃO CAMILA","v":1000.0},{"d":"PG CAMILA dia 10","v":1000.0}]},{"y":2023,"m":3,"te":4097.94,"ti":5100.0,"ei":[{"d":"COMPRA DO MÊS","v":1227.94,"c":"Compras e Pessoal"},{"d":"ESCOLA KAYQUI e juju","v":450.0,"c":"Educação"},{"d":"ROTA","v":140.0,"c":"Transporte"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":602.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":338.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":40.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":128.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":400.0,"c":"Família e Doações"},{"d":"escolinha futebol","v":70.0,"c":"Educação"}],"ii":[{"d":"PG JAYLSON","v":1500.0},{"d":"VT","v":3600.0}]},{"y":2023,"m":4,"te":5476.0,"ti":5500.0,"ei":[{"d":"COMPRA DO MÊS","v":635.0,"c":"Compras e Pessoal"},{"d":"ESCOLA KAYQUI e juju","v":395.0,"c":"Educação"},{"d":"ROTA","v":140.0,"c":"Transporte"},{"d":"lanche","v":114.0,"c":"Compras e Pessoal"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":138.0,"c":"Cartão de Crédito"},{"d":"jaylson camisas","v":120.0,"c":"Compras e Pessoal"},{"d":"AMPLA","v":340.0,"c":"Moradia"},{"d":"GAS","v":90.0,"c":"Moradia"},{"d":"barbearia","v":38.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"carro","v":354.0,"c":"Transporte"},{"d":"tarifa banco","v":40.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":120.0,"c":"Telefone e Assinaturas"},{"d":"obra","v":1700.0,"c":"Moradia"},{"d":"glaucia","v":400.0,"c":"Família e Doações"},{"d":"farmacia","v":80.0,"c":"Outros"},{"d":"escolinha futebol","v":70.0,"c":"Educação"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"COMISSÃO","v":500.0},{"d":"PG CAMILA dia 10","v":2000.0}]},{"y":2023,"m":5,"te":3707.0,"ti":4303.0,"ei":[{"d":"ESCOLA KAYQUI e juju","v":450.0,"c":"Educação"},{"d":"ROTA","v":140.0,"c":"Transporte"},{"d":"tangua padaria","v":70.0,"c":"Outros"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1475.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":340.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":40.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":120.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"escolinha futebol","v":70.0,"c":"Educação"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"PG CAMILA dia 10","v":1303.0},{"d":"300","v":4303.0}]},{"y":2023,"m":6,"te":4439.0,"ti":4900.0,"ei":[{"d":"ESCOLA KAYQUI e juju","v":450.0,"c":"Educação"},{"d":"ROTA","v":140.0,"c":"Transporte"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":2000.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":338.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":40.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":127.0,"c":"Telefone e Assinaturas"},{"d":"ipva","v":272.0,"c":"Transporte"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"escolinha futebol","v":70.0,"c":"Educação"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"PG CAMILA dia 10","v":1900.0},{"d":"300","v":4900.0}]},{"y":2023,"m":7,"te":3221.0,"ti":4440.0,"ei":[{"d":"COMPRA DO MÊS","v":250.0,"c":"Compras e Pessoal"},{"d":"ESCOLA KAYQUI e juju","v":200.0,"c":"Educação"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1521.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":259.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":42.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":127.0,"c":"Telefone e Assinaturas"},{"d":"LANCHE","v":107.0,"c":"Compras e Pessoal"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"PG CAMILA dia 10","v":1440.0},{"d":"140","v":4440.0}]},{"y":2023,"m":8,"te":3174.0,"ti":1440.0,"ei":[{"d":"COMPRA DO MÊS","v":500.0,"c":"Compras e Pessoal"},{"d":"ESCOLA KAYQUI e juju","v":200.0,"c":"Educação"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1000.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":294.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":42.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":136.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"PG CAMILA dia 10","v":1440.0},{"d":"140","v":1440.0}]},{"y":2023,"m":9,"te":300.0,"ti":4440.0,"ei":[{"d":"ESCOLA KAYQUI e juju","v":200.0,"c":"Educação"},{"d":"CONDOMINIO","v":160.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1700.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":280.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":42.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":76.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"PG CAMILA dia 10","v":1440.0},{"d":"140","v":4440.0}]},{"y":2023,"m":10,"te":2757.0,"ti":4440.0,"ei":[{"d":"ESCOLA KAYQUI e juju","v":200.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1100.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":281.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":75.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"PG CAMILA dia 10","v":1440.0},{"d":"140","v":4440.0}]},{"y":2023,"m":11,"te":2971.0,"ti":4440.0,"ei":[{"d":"COMPRA DO MÊS","v":100.0,"c":"Compras e Pessoal"},{"d":"ESCOLA KAYQUI e juju","v":200.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1100.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":310.0,"c":"Moradia"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"cinema","v":85.0,"c":"Compras e Pessoal"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":75.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"PG CAMILA dia 10","v":1440.0},{"d":"140","v":4440.0}]},{"y":2023,"m":12,"te":2986.0,"ti":6140.0,"ei":[{"d":"COMPRA DO MÊS","v":600.0,"c":"Compras e Pessoal"},{"d":"ESCOLA KAYQUI e juju","v":200.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":600.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":310.0,"c":"Moradia"},{"d":"barbearia","v":100.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":75.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"13","v":1400.0},{"d":"13","v":300.0},{"d":"PG CAMILA dia 10","v":1440.0},{"d":"40","v":6140.0}]},{"y":2024,"m":1,"te":2714.0,"ti":6140.0,"ei":[{"d":"COMPRA DO MÊS","v":321.0,"c":"Compras e Pessoal"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":720.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":471.0,"c":"Moradia"},{"d":"barbearia","v":25.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":76.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"13","v":1400.0},{"d":"13","v":300.0},{"d":"PG CAMILA dia 10","v":1440.0},{"d":"40","v":6140.0}]},{"y":2024,"m":2,"te":3039.0,"ti":4740.0,"ei":[{"d":"COMPRA DO MÊS","v":200.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":837.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":350.0,"c":"Moradia"},{"d":"barbearia","v":75.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":76.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"13","v":300.0},{"d":"PG CAMILA dia 10","v":1440.0},{"d":"40","v":4740.0}]},{"y":2024,"m":3,"te":3691.0,"ti":1659.0,"ei":[{"d":"COMPRA DO MÊS","v":500.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"festa escola juju","v":60.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":765.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":358.0,"c":"Moradia"},{"d":"2 parcela ipva","v":264.0,"c":"Transporte"},{"d":"barbearia","v":27.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"iptu 2 parcelas","v":70.0,"c":"Moradia"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":76.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"2 parcelas iptu","v":70.0,"c":"Moradia"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1084.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2024,"m":4,"te":3399.0,"ti":1659.0,"ei":[{"d":"COMPRA DO MÊS","v":482.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":625.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":420.0,"c":"Moradia"},{"d":"2 parcela ipva","v":251.0,"c":"Transporte"},{"d":"barbearia","v":50.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"iptu 2 parcelas","v":70.0,"c":"Moradia"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":76.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1084.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2024,"m":5,"te":850.0,"ti":1659.0,"ei":[{"d":"COMPRA DO MÊS","v":530.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":900.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":355.0,"c":"Moradia"},{"d":"barbearia","v":50.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":76.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1084.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2024,"m":6,"te":905.0,"ti":1659.0,"ei":[{"d":"COMPRA DO MÊS","v":500.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":800.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":350.0,"c":"Moradia"},{"d":"barbearia","v":55.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":76.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1084.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2024,"m":7,"te":2814.0,"ti":1659.0,"ei":[{"d":"COMPRA DO MÊS","v":457.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":430.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":295.0,"c":"Moradia"},{"d":"barbearia","v":55.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":56.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":76.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1084.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2024,"m":8,"te":2333.0,"ti":4750.0,"ei":[{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":302.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":348.0,"c":"Moradia"},{"d":"barbearia","v":27.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":60.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":81.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"pizza filme / estacionamento","v":70.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"REFEIÇÃO CAMILA","v":250.0}]},{"y":2024,"m":9,"te":3181.0,"ti":4775.0,"ei":[{"d":"COMPRA DO MÊS","v":500.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":302.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":415.0,"c":"Moradia"},{"d":"barbearia","v":27.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":226.0,"c":"Transporte"},{"d":"NETFLIX","v":60.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":45.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":81.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"almoço e e outros","v":195.0,"c":"Outros"},{"d":"farmacia","v":155.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2024,"m":10,"te":3064.0,"ti":4775.0,"ei":[{"d":"COMPRA DO MÊS","v":533.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":268.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":435.0,"c":"Moradia"},{"d":"barbearia","v":27.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"NETFLIX","v":60.0,"c":"Telefone e Assinaturas"},{"d":"tarifa banco","v":45.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"Vivo","v":81.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"almoço e e outros","v":170.0,"c":"Outros"},{"d":"farmacia","v":43.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2024,"m":11,"te":3753.0,"ti":5175.0,"ei":[{"d":"COMPRA DO MÊS","v":195.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":327.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO","v":740.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":440.0,"c":"Moradia"},{"d":"barbearia","v":27.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"NETFLIX","v":60.0,"c":"Telefone e Assinaturas"},{"d":"JESSICA LIMPEZA ROSTO","v":80.0,"c":"Outros"},{"d":"tarifa banco","v":45.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"pizza e outros","v":167.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2024,"m":12,"te":3691.0,"ti":5175.0,"ei":[{"d":"ESCOLA  juju","v":250.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":222.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO","v":787.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":318.0,"c":"Moradia"},{"d":"barbearia","v":79.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"viagem","v":150.0,"c":"Compras e Pessoal"},{"d":"tarifa banco","v":42.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":57.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"uber","v":121.0,"c":"Transporte"},{"d":"cinema e laches","v":178.0,"c":"Compras e Pessoal"},{"d":"cerasa oi cnpj","v":115.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2025,"m":1,"te":4472.0,"ti":7175.0,"ei":[{"d":"COMPRA DO MÊS","v":251.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"ROTA JUJU","v":150.0,"c":"Educação"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":605.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO","v":941.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":380.0,"c":"Moradia"},{"d":"barbearia","v":100.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"reparo vidro carro","v":200.0,"c":"Transporte"},{"d":"viagem","v":150.0,"c":"Compras e Pessoal"},{"d":"tarifa banco","v":42.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":57.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"farmacia","v":258.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":5000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2025,"m":2,"te":3159.0,"ti":5675.0,"ei":[{"d":"COMPRA DO MÊS","v":400.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":481.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO","v":1100.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":369.0,"c":"Moradia"},{"d":"uniforme kayqui","v":90.0,"c":"Outros"},{"d":"barbearia","v":100.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"viagem","v":300.0,"c":"Compras e Pessoal"},{"d":"tarifa banco","v":42.0,"c":"Outros"},{"d":"claro","v":57.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"ipva 2 parcela","v":242.0,"c":"Transporte"},{"d":"consorcio","v":877.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3500.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2025,"m":3,"te":5098.0,"ti":5175.0,"ei":[{"d":"COMPRA DO MÊS","v":400.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":165.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1037.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":722.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":307.0,"c":"Moradia"},{"d":"barbearia","v":100.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 2 E 3 PARCELAS","v":75.0,"c":"Moradia"},{"d":"tarifa banco","v":42.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":57.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"ipva 3 parcela","v":243.0,"c":"Transporte"},{"d":"consorcio","v":877.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2025,"m":4,"te":3948.0,"ti":5175.0,"ei":[{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1057.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":698.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":313.0,"c":"Moradia"},{"d":"barbearia","v":32.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 2 E 3 PARCELAS","v":75.0,"c":"Moradia"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":57.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":877.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2025,"m":5,"te":5955.0,"ti":5175.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":650.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1145.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":563.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":326.0,"c":"Moradia"},{"d":"RODIZIO KAYQUI","v":200.0,"c":"Outros"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 5 PARCELA","v":36.0,"c":"Moradia"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":57.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"CINEMA","v":230.0,"c":"Compras e Pessoal"},{"d":"consorcio","v":877.0,"c":"Transporte"},{"d":"MOTOR PORTAO","v":80.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"REFEIÇÃO CAMILA","v":275.0}]},{"y":2025,"m":6,"te":5687.0,"ti":2240.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":370.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":806.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":775.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":303.0,"c":"Moradia"},{"d":"barbearia","v":30.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 6 PARCELA","v":36.0,"c":"Moradia"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":50.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"manutenção gnv","v":650.0,"c":"Outros"},{"d":"consorcio","v":876.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":390.0},{"d":"passagem camila","v":300.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"REFEIÇÃO CAMILA","v":250.0}]},{"y":2025,"m":7,"te":3140.0,"ti":5520.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":500.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":570.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":850.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":341.0,"c":"Moradia"},{"d":"barbearia","v":30.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 8 PARCELA","v":36.0,"c":"Moradia"},{"d":"consorcio","v":875.0,"c":"Transporte"},{"d":"vistoria gnv","v":260.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":430.0},{"d":"passagem camila","v":340.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2025,"m":8,"te":5453.0,"ti":5520.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":500.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":570.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":773.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":341.0,"c":"Moradia"},{"d":"inscri iff","v":70.0,"c":"Outros"},{"d":"barbearia","v":64.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 8 PARCELA","v":36.0,"c":"Moradia"},{"d":"salgadinhos","v":80.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"mic caixa de som","v":60.0,"c":"Outros"},{"d":"consorcio","v":875.0,"c":"Transporte"},{"d":"vistoria gnv","v":280.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":430.0},{"d":"passagem camila","v":340.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2025,"m":9,"te":5473.0,"ti":5490.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":500.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":922.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":700.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":348.0,"c":"Moradia"},{"d":"praia grande","v":215.0,"c":"Outros"},{"d":"barbearia","v":30.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 9 PARCELA","v":36.0,"c":"Moradia"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":875.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":420.0},{"d":"passagem camila","v":320.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2025,"m":10,"te":4832.5,"ti":5490.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":300.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":832.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":680.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":373.0,"c":"Moradia"},{"d":"lanche","v":38.5,"c":"Compras e Pessoal"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 9 PARCELA","v":36.0,"c":"Moradia"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"mini 2 etapa","v":91.0,"c":"Outros"},{"d":"consorcio","v":875.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":420.0},{"d":"passagem camila","v":320.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2025,"m":11,"te":4392.0,"ti":5490.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":590.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":2000.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":780.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":365.0,"c":"Moradia"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 11 PARCELA","v":36.0,"c":"Moradia"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":874.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":420.0},{"d":"passagem camila","v":320.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2025,"m":12,"te":3933.0,"ti":5490.0,"ei":[{"d":"ESCOLA  juju","v":366.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":4700.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":708.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":468.0,"c":"Moradia"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 11 PARCELA","v":36.0,"c":"Moradia"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":874.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":420.0},{"d":"passagem camila","v":320.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":200.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":1,"te":3745.54,"ti":5570.0,"ei":[{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":2520.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":900.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":443.09,"c":"Moradia"},{"d":"IPVA 1 PARCELA","v":255.95,"c":"Transporte"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"IPTU SG 11 PARCELA","v":391.5,"c":"Moradia"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":874.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":420.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":2,"te":4310.62,"ti":5490.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":185.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1215.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":1076.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":125.68,"c":"Moradia"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"passeio phn","v":220.0,"c":"Compras e Pessoal"},{"d":"repaqro gnv","v":50.0,"c":"Outros"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":872.94,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":340.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":3,"te":3700.28,"ti":5490.0,"ei":[{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":150.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1352.28,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":1076.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":187.0,"c":"Moradia"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"passeio phn","v":220.0,"c":"Compras e Pessoal"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":872.94,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":340.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":4,"te":5574.0,"ti":5490.0,"ei":[{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":160.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1000.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":1378.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":240.0,"c":"Moradia"},{"d":"barbearia","v":32.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"passeio phn","v":220.0,"c":"Compras e Pessoal"},{"d":"tarifa banco","v":43.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"camisa catequese juju","v":33.0,"c":"Educação"},{"d":"consorcio","v":912.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":340.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":5,"te":4989.0,"ti":5490.0,"ei":[{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":160.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1000.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":1433.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":257.0,"c":"Moradia"},{"d":"barbearia","v":32.0,"c":"Outros"},{"d":"Seguro Carro APVS","v":227.0,"c":"Transporte"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":475.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":340.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":6,"te":5456.0,"ti":5490.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":505.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":160.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1100.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":1230.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":220.0,"c":"Moradia"},{"d":"barbearia","v":32.0,"c":"Outros"},{"d":"cartao torra","v":169.0,"c":"Cartão de Crédito"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":56.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":475.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":340.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":7,"te":7105.0,"ti":5640.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":255.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":160.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1045.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO (NU)","v":1648.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":199.0,"c":"Moradia"},{"d":"exame kayqui e medico","v":220.0,"c":"Outros"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"remedio jaylsom","v":32.0,"c":"Outros"},{"d":"cartao torra","v":163.0,"c":"Cartão de Crédito"},{"d":"tarifa banco","v":44.0,"c":"Outros"},{"d":"dizimo","v":160.0,"c":"Família e Doações"},{"d":"claro","v":59.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"viagem","v":1250.0,"c":"Compras e Pessoal"},{"d":"consorcio","v":475.0,"c":"Transporte"},{"d":"laser garrafa","v":30.0,"c":"Outros"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":490.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":8,"te":3732.0,"ti":5550.0,"ei":[{"d":"COMPRA DO MÊS + AMARULAS","v":185.0,"c":"Compras e Pessoal"},{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":160.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1433.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO  e seguro (NU)","v":1700.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":189.0,"c":"Moradia"},{"d":"barbearia","v":60.0,"c":"Outros"},{"d":"tarifa banco","v":50.0,"c":"Outros"},{"d":"dizimo","v":180.0,"c":"Família e Doações"},{"d":"Vivo","v":65.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":55.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":475.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":400.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]},{"y":2026,"m":9,"te":5477.0,"ti":5550.0,"ei":[{"d":"ESCOLA  juju","v":460.0,"c":"Educação"},{"d":"Rota","v":160.0,"c":"Transporte"},{"d":"ESTACIONAMENTO","v":270.0,"c":"Transporte"},{"d":"CONDOMINIO","v":175.0,"c":"Moradia"},{"d":"WEB.COM","v":100.0,"c":"Moradia"},{"d":"CARTÃO SANTANDER","v":1232.0,"c":"Cartão de Crédito"},{"d":"CARTÃO CARRO  e seguro (NU)","v":1682.0,"c":"Cartão de Crédito"},{"d":"AMPLA","v":242.0,"c":"Moradia"},{"d":"barbearia","v":32.0,"c":"Outros"},{"d":"tarifa banco","v":50.0,"c":"Outros"},{"d":"dizimo","v":180.0,"c":"Família e Doações"},{"d":"Vivo","v":65.0,"c":"Telefone e Assinaturas"},{"d":"claro","v":55.0,"c":"Telefone e Assinaturas"},{"d":"glaucia","v":300.0,"c":"Família e Doações"},{"d":"consorcio","v":474.0,"c":"Transporte"}],"ii":[{"d":"PG JAYLSON","v":3000.0},{"d":"passagem jaylson","v":400.0},{"d":"ADIANTAMENTO CAMILA","v":300.0},{"d":"PG CAMILA","v":1000.0},{"d":"COMISSÃO CAMILA","v":600.0},{"d":"ALIMENTAÇÃO CAMILA","v":250.0}]}];
+
+const CATEGORIES = ["Cartão de Crédito","Transporte","Moradia","Família e Doações","Compras e Pessoal","Educação","Outros","Telefone e Assinaturas"];
+const CAT_VAR = {
+  "Cartão de Crédito":"--cat-1", "Transporte":"--cat-2", "Moradia":"--cat-3",
+  "Família e Doações":"--cat-4", "Compras e Pessoal":"--cat-5", "Educação":"--cat-6",
+  "Outros":"--cat-7", "Telefone e Assinaturas":"--cat-8"
+};
+const MONTH_ABBR = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+const MONTH_FULL = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const BRL = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+const BRL2 = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'});
+
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+/* ============ Login (acesso restrito, múltiplos usuários) ============ */
+// As senhas nunca ficam gravadas em texto puro — só o "hash" delas (SHA-256).
+// Os dois usuários abaixo são administradores e podem trocar qualquer senha
+// pelo botão de Configurações dentro do sistema.
+const DEFAULT_USERS = [
+  { username:'jaylson', name:'Jaylson', role:'admin', hash:'9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0' }, // senha inicial: 0000
+  { username:'camila',  name:'Camila',  role:'admin', hash:'9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0' }  // senha inicial: 0000
+];
+const AUTH_USERS_KEY = 'livro-caixa-users-v1';
+const AUTH_REMEMBER_KEY = 'livro-caixa-auth-user-v1';
+
+let authUsers = DEFAULT_USERS.map(u => ({...u}));
+let usingLocalAuth = false;
+let authLoaded = false;
+let currentUser = null; // username logado
+
+async function sha256Hex(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function loadAuthLocal(){
+  try{
+    const raw = localStorage.getItem(AUTH_USERS_KEY);
+    if (raw) return JSON.parse(raw);
+  }catch(e){}
+  const seeded = DEFAULT_USERS.map(u => ({...u}));
+  saveAuthLocal(seeded);
+  return seeded;
+}
+function saveAuthLocal(list){
+  try{ localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(list)); }catch(e){}
+}
+
+function findUser(username){
+  return authUsers.find(u => u.username === username) || null;
+}
+
+function populateUserSelects(){
+  const opts = authUsers.map(u => `<option value="${u.username}">${escapeHtml(u.name)}</option>`).join('');
+  const authSel = document.getElementById('auth-user');
+  const prevAuth = authSel.value;
+  authSel.innerHTML = opts;
+  if (prevAuth && findUser(prevAuth)) authSel.value = prevAuth;
+
+  const setSel = document.getElementById('settings-user');
+  if (setSel){
+    const prevSet = setSel.value || currentUser;
+    setSel.innerHTML = opts;
+    if (prevSet && findUser(prevSet)) setSel.value = prevSet;
+  }
+}
+
+function onAuthLoaded(){
+  authLoaded = true;
+  populateUserSelects();
+  const authSubmit = document.querySelector('#auth-form .auth-submit');
+  authSubmit.disabled = false;
+  authSubmit.textContent = 'Entrar';
+
+  const remembered = (() => { try{ return localStorage.getItem(AUTH_REMEMBER_KEY); }catch(e){ return null; } })();
+  if (remembered && findUser(remembered)){
+    currentUser = remembered;
+    showApp();
+    boot();
+  }
+}
+
+/* ============ Persistência dos usuários (db com fallback localStorage) ============ */
+function initAuthStorage(){
+  if (db){
+    try{
+      db.collection('auth_users').limit(50).onSnapshot(
+        snap => {
+          if (snap.docs.length){
+            authUsers = snap.docs.map(d => ({ username:d.id, ...d.data() }));
+          } else {
+            authUsers = DEFAULT_USERS.map(u => ({...u}));
+            authUsers.forEach(u => {
+              db.collection('auth_users').doc(u.username).set({ name:u.name, role:u.role, hash:u.hash }).catch(()=>{});
+            });
+          }
+          onAuthLoaded();
+        },
+        err => {
+          console.warn('auth snapshot error, falling back to local', err);
+          usingLocalAuth = true;
+          authUsers = loadAuthLocal();
+          onAuthLoaded();
+        }
+      );
+      return;
+    }catch(e){ /* cai pro fallback local */ }
+  }
+  usingLocalAuth = true;
+  authUsers = loadAuthLocal();
+  onAuthLoaded();
+}
+
+async function saveUserPassword(username, newHash){
+  const user = findUser(username);
+  if (!user) return false;
+  authUsers = authUsers.map(u => u.username === username ? { ...u, hash:newHash } : u);
+
+  if (db && !usingLocalAuth){
+    try{
+      await db.collection('auth_users').doc(username).set({ name:user.name, role:user.role, hash:newHash });
+      return true;
+    }catch(e){
+      console.warn('auth write failed, using local fallback', e);
+      usingLocalAuth = true;
+    }
+  }
+  saveAuthLocal(authUsers);
+  return true;
+}
+
+function showApp(){
+  document.getElementById('auth-gate').hidden = true;
+  document.getElementById('app-shell').hidden = false;
+  const who = findUser(currentUser);
+  const label = document.getElementById('current-user-label');
+  if (label) label.textContent = who ? who.name : '';
+}
+
+function rememberAuth(username){
+  try{ localStorage.setItem(AUTH_REMEMBER_KEY, username); }catch(e){}
+}
+function forgetAuth(){
+  try{ localStorage.removeItem(AUTH_REMEMBER_KEY); }catch(e){}
+}
+
+function logout(){
+  forgetAuth();
+  currentUser = null;
+  document.getElementById('app-shell').hidden = true;
+  document.getElementById('auth-gate').hidden = false;
+  document.getElementById('auth-pass').value = '';
+  document.getElementById('auth-error').hidden = true;
+  document.getElementById('auth-pass').focus();
+}
+
+document.getElementById('auth-form').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  if (!authLoaded) return;
+  const username = document.getElementById('auth-user').value;
+  const pass = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  const user = findUser(username);
+  const hash = await sha256Hex(pass);
+  if (user && hash === user.hash){
+    errEl.hidden = true;
+    currentUser = username;
+    if (document.getElementById('auth-remember').checked) rememberAuth(username);
+    showApp();
+    boot();
+  } else {
+    errEl.hidden = false;
+    document.getElementById('auth-pass').value = '';
+    document.getElementById('auth-pass').focus();
+  }
+});
+
+document.getElementById('btn-logout').addEventListener('click', logout);
+
+/* ============ Configurações: trocar senha ============ */
+document.getElementById('btn-settings').addEventListener('click', () => {
+  document.getElementById('settings-error').hidden = true;
+  document.getElementById('form-settings').reset();
+  populateUserSelects();
+  if (currentUser) document.getElementById('settings-user').value = currentUser;
+  openModal('modal-settings');
+});
+
+document.getElementById('form-settings').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const username = document.getElementById('settings-user').value;
+  const pass1 = document.getElementById('settings-pass').value;
+  const pass2 = document.getElementById('settings-pass2').value;
+  const errEl = document.getElementById('settings-error');
+  if (pass1.length < 4 || pass1 !== pass2){
+    errEl.textContent = pass1 !== pass2 ? 'As senhas não coincidem.' : 'Use pelo menos 4 caracteres.';
+    errEl.hidden = false;
+    return;
+  }
+  const hash = await sha256Hex(pass1);
+  await saveUserPassword(username, hash);
+  closeModal('modal-settings');
+  const who = findUser(username);
+  showToast(`Senha de ${who ? who.name : username} atualizada.`);
+});
+
+/* ============ Estado ============ */
+let entries = []; // lançamentos manuais {id,type,desc,value,category,date}
+let db = null;
+let usingLocal = false;
+let selectedYear = null;
+let selectedMonth = null; // null = ano inteiro, 1-12 = mês específico
+let expSearch = '';
+let incSearch = '';
+
+/* ============ Persistência (db com fallback localStorage) ============ */
+const LOCAL_KEY = 'livro-caixa-entries-v1';
+
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(LOCAL_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveLocal(list){
+  try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); }catch(e){}
+}
+
+function initStorage(){
+  // `db` já foi resolvido antes do login, por resolveDb().
+  if (db){
+    try{
+      db.collection('entries').orderBy('date','desc').limit(1000).onSnapshot(
+        snap => {
+          entries = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+          renderAll();
+          maybeAutoSeed();
+        },
+        err => {
+          console.warn('db snapshot error, falling back to local', err);
+          usingLocal = true; db = null;
+          entries = loadLocal();
+          renderAll();
+          maybeAutoSeed();
+        }
+      );
+    }catch(e){
+      usingLocal = true; db = null;
+      entries = loadLocal();
+      maybeAutoSeed();
+    }
+  } else {
+    usingLocal = true;
+    entries = loadLocal();
+    maybeAutoSeed();
+  }
+}
+
+async function addEntry(entry){
+  if (db && !usingLocal){
+    try{
+      await db.collection('entries').add(entry);
+      return true;
+    }catch(e){
+      console.warn('db write failed, using local fallback', e);
+      usingLocal = true;
+    }
+  }
+  const withId = { ...entry, id: 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2,7) };
+  entries = [withId, ...entries];
+  saveLocal(entries);
+  renderAll();
+  return true;
+}
+
+async function deleteEntry(id){
+  if (db && !usingLocal && !String(id).startsWith('local-')){
+    try{ await db.collection('entries').doc(id).delete(); return; }
+    catch(e){ console.warn('delete failed', e); }
+  }
+  entries = entries.filter(e => e.id !== id);
+  saveLocal(entries);
+  renderAll();
+}
+
+async function updateEntry(id, data){
+  if (db && !usingLocal && !String(id).startsWith('local-')){
+    try{ await db.collection('entries').doc(id).update(data); return true; }
+    catch(e){ console.warn('update failed', e); }
+  }
+  entries = entries.map(e => e.id === id ? { ...e, ...data } : e);
+  saveLocal(entries);
+  renderAll();
+  return true;
+}
+
+function findEntry(id){
+  return entries.find(e => e.id === id) || null;
+}
+
+/* ============ Status "pago / a pagar" das despesas ============ */
+let paidMap = {};
+let usingLocalPaid = false;
+const PAID_LOCAL_KEY = 'livro-caixa-paid-v1';
+
+function loadPaidLocal(){
+  try{
+    const raw = localStorage.getItem(PAID_LOCAL_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function savePaidLocal(map){
+  try{ localStorage.setItem(PAID_LOCAL_KEY, JSON.stringify(map)); }catch(e){}
+}
+
+function initPaidStorage(){
+  if (db && !usingLocal){
+    try{
+      db.collection('paid').limit(2000).onSnapshot(
+        snap => {
+          const map = {};
+          snap.docs.forEach(d => { map[d.id] = !!(d.data().paid); });
+          paidMap = map;
+          renderAll();
+        },
+        err => {
+          console.warn('paid snapshot error, falling back to local', err);
+          usingLocalPaid = true;
+          paidMap = loadPaidLocal();
+          renderAll();
+        }
+      );
+      return;
+    }catch(e){ /* cai para o fallback local abaixo */ }
+  }
+  usingLocalPaid = true;
+  paidMap = loadPaidLocal();
+}
+
+function isPaid(id){ return !!paidMap[id]; }
+
+async function togglePaid(id){
+  const next = !isPaid(id);
+  paidMap = { ...paidMap, [id]: next };
+
+  if (db && !usingLocal && !usingLocalPaid){
+    try{
+      await db.collection('paid').doc(String(id)).set({ paid: next });
+      return;
+    }catch(e){
+      console.warn('paid write failed, using local fallback', e);
+      usingLocalPaid = true;
+    }
+  }
+  savePaidLocal(paidMap);
+  renderAll();
+}
+
+/* ============ Agregação de dados ============ */
+function entryYear(e){ return parseInt(String(e.date).slice(0,4), 10); }
+function entryMonth(e){ return parseInt(String(e.date).slice(5,7), 10); }
+
+function allYears(){
+  const ys = new Set(HIST.map(m => m.y));
+  entries.forEach(e => { const y = entryYear(e); if (!isNaN(y)) ys.add(y); });
+  const cur = new Date().getFullYear();
+  ys.add(cur);
+  return Array.from(ys).sort((a,b) => a-b);
+}
+
+function histMonth(year, month){
+  return HIST.find(m => m.y === year && m.m === month) || null;
+}
+
+function monthEntries(year, month){
+  return entries.filter(e => entryYear(e) === year && entryMonth(e) === month);
+}
+
+function monthTotals(year, month){
+  const h = histMonth(year, month);
+  const me = monthEntries(year, month);
+  let income = h ? (h.ti || 0) : 0;
+  let expense = h ? (h.te || 0) : 0;
+  me.forEach(e => {
+    const v = Number(e.value) || 0;
+    if (e.type === 'receita') income += v; else expense += v;
+  });
+  const hasData = !!h || me.length > 0;
+  return { income, expense, hasData };
+}
+
+function yearSummary(year){
+  let income = 0, expense = 0, monthsWithData = 0;
+  for (let m=1; m<=12; m++){
+    const t = monthTotals(year, m);
+    income += t.income; expense += t.expense;
+    if (t.hasData) monthsWithData++;
+  }
+  return { income, expense, saldo: income-expense, monthsWithData: monthsWithData || 1 };
+}
+
+/* Resumo do período em exibição: ano inteiro (month=null) ou um mês específico */
+function periodSummary(year, month){
+  if (!month){
+    return { ...yearSummary(year), isMonth:false };
+  }
+  const t = monthTotals(year, month);
+  return { income:t.income, expense:t.expense, saldo:t.income-t.expense, monthsWithData:1, isMonth:true, hasData:t.hasData };
+}
+
+function categoryTotals(year, month){
+  const totals = {};
+  CATEGORIES.forEach(c => totals[c] = 0);
+  const months = month ? [month] : Array.from({length:12}, (_,i)=>i+1);
+  months.forEach(m => {
+    const h = histMonth(year, m);
+    if (h) h.ei.forEach(it => { totals[it.c] = (totals[it.c]||0) + it.v; });
+    monthEntries(year, m).filter(e => e.type==='despesa').forEach(e => {
+      const c = CATEGORIES.includes(e.category) ? e.category : 'Outros';
+      totals[c] = (totals[c]||0) + (Number(e.value)||0);
+    });
+  });
+  return totals;
+}
+
+function allTxForYear(year){
+  const rows = [];
+  for (let m=1; m<=12; m++){
+    const h = histMonth(year, m);
+    if (h){
+      h.ei.forEach((it, i) => rows.push({
+        id: 'h-e-'+year+'-'+m+'-'+i, type:'despesa', desc:it.d, value:it.v, category:it.c,
+        year, month:m, manual:false
+      }));
+      h.ii.forEach((it, i) => rows.push({
+        id: 'h-i-'+year+'-'+m+'-'+i, type:'receita', desc:it.d, value:it.v, category:null,
+        year, month:m, manual:false
+      }));
+    }
+    monthEntries(year, m).forEach(e => rows.push({
+      id:e.id, type:e.type, desc:e.desc, value:Number(e.value)||0, category:e.category||null,
+      year, month:m, manual:true
+    }));
+  }
+  rows.sort((a,b) => b.month - a.month);
+  return rows;
+}
+
+/* ============ Auto-preenchimento do próximo mês (despesas) ============ */
+const AUTOSEED_KEY = 'livro-caixa-autoseed-v1';
+let autoSeedDone = false;
+
+function loadAutoseedLog(){
+  try{ return JSON.parse(localStorage.getItem(AUTOSEED_KEY) || '[]'); }catch(e){ return []; }
+}
+function saveAutoseedLog(list){
+  try{ localStorage.setItem(AUTOSEED_KEY, JSON.stringify(list)); }catch(e){}
+}
+function monthKey(y,m){ return y + '-' + String(m).padStart(2,'0'); }
+
+function hasExpenseData(year, month){
+  const h = histMonth(year, month);
+  if (h && h.ei && h.ei.length) return true;
+  return monthEntries(year, month).some(e => e.type === 'despesa');
+}
+
+function findLastMonthWithExpenseData(){
+  const years = allYears();
+  let last = null;
+  years.forEach(y => {
+    for (let m=1; m<=12; m++){
+      if (hasExpenseData(y, m)) last = { y, m };
+    }
+  });
+  return last;
+}
+
+/* Copia as despesas do último mês com lançamentos para o mês seguinte, como
+   uma base editável (as receitas ficam de fora, sem valores). Roda uma única
+   vez por mês-alvo (marcado em localStorage), mesmo que os itens copiados
+   sejam depois editados/excluídos pelo usuário. */
+async function autoSeedNextMonthExpenses(){
+  const last = findLastMonthWithExpenseData();
+  if (!last) return;
+
+  let ny = last.y, nm = last.m + 1;
+  if (nm > 12){ nm = 1; ny += 1; }
+
+  const key = monthKey(ny, nm);
+  const log = loadAutoseedLog();
+  if (log.includes(key)) return;
+  if (hasExpenseData(ny, nm)) return;
+
+  const items = [];
+  const h = histMonth(last.y, last.m);
+  if (h) h.ei.forEach(it => items.push({ desc: it.d, value: it.v, category: it.c }));
+  monthEntries(last.y, last.m).filter(e => e.type === 'despesa').forEach(e => {
+    items.push({ desc: e.desc, value: Number(e.value) || 0, category: e.category || 'Outros' });
+  });
+  if (!items.length) return;
+
+  log.push(key);
+  saveAutoseedLog(log);
+
+  const dateStr = `${ny}-${String(nm).padStart(2,'0')}-01`;
+  for (const it of items){
+    await addEntry({ type:'despesa', desc: it.desc, value: it.value, category: it.category || 'Outros', date: dateStr });
+  }
+  showToast(`Despesas de ${MONTH_FULL[last.m-1]} copiadas como base para ${MONTH_FULL[nm-1]}/${ny} — edite ou exclua o que mudar.`);
+}
+
+function maybeAutoSeed(){
+  if (autoSeedDone) return;
+  autoSeedDone = true;
+  autoSeedNextMonthExpenses().catch(e => console.warn('auto-seed falhou', e));
+}
+
+/* ============ Render: seletores de ano e mês ============ */
+function renderFilters(){
+  const years = allYears();
+  if (!selectedYear || !years.includes(selectedYear)){
+    // escolhe o ano mais recente que realmente tem dados, senão o ano atual
+    const withData = years.filter(y => HIST.some(m=>m.y===y) || entries.some(e=>entryYear(e)===y));
+    selectedYear = withData.length ? withData[withData.length-1] : years[years.length-1];
+  }
+
+  const yearSelect = document.getElementById('year-select');
+  const prevYearVal = yearSelect.value;
+  yearSelect.innerHTML = years.map(y => `<option value="${y}" ${y===selectedYear?'selected':''}>${y}</option>`).join('');
+  if (String(selectedYear) !== prevYearVal) yearSelect.value = String(selectedYear);
+
+  const monthSelect = document.getElementById('month-select');
+  monthSelect.innerHTML = `<option value="">Ano inteiro</option>` +
+    MONTH_FULL.map((name,i) => `<option value="${i+1}" ${selectedMonth===i+1?'selected':''}>${name}</option>`).join('');
+  monthSelect.value = selectedMonth ? String(selectedMonth) : '';
+
+  document.getElementById('year-select-wrap').classList.remove('is-set'); // ano sempre visível, sem destaque
+  document.getElementById('month-select-wrap').classList.toggle('is-set', !!selectedMonth);
+}
+
+document.getElementById('year-select').addEventListener('change', ev => {
+  selectedYear = parseInt(ev.target.value, 10);
+  renderAll();
+});
+document.getElementById('month-select').addEventListener('change', ev => {
+  selectedMonth = ev.target.value ? parseInt(ev.target.value, 10) : null;
+  renderAll();
+});
+
+/* ============ Render: KPIs ============ */
+function renderKPIs(){
+  const s = periodSummary(selectedYear, selectedMonth);
+  const periodLabel = selectedMonth ? `${MONTH_FULL[selectedMonth-1]}/${selectedYear}` : `${selectedYear}`;
+  const el = document.getElementById('kpis');
+  const saldoClass = s.saldo >= 0 ? 'saldo-pos' : 'saldo-neg';
+
+  let fourthCard = '';
+  if (!s.isMonth){
+    const avgExpense = s.expense / s.monthsWithData;
+    fourthCard = `
+      <div class="kpi">
+        <span class="label">Média mensal de gastos</span>
+        <span class="value num">${BRL.format(avgExpense)}</span>
+        <span class="sub">${s.monthsWithData} ${s.monthsWithData===1?'mês registrado':'meses registrados'}</span>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="kpi">
+      <span class="label">Receitas ${selectedMonth?'no mês':'em '+selectedYear}</span>
+      <span class="value num" style="color:var(--income-dark)">${BRL.format(s.income)}</span>
+      <span class="sub">${periodLabel}</span>
+    </div>
+    <div class="kpi">
+      <span class="label">Despesas ${selectedMonth?'no mês':'em '+selectedYear}</span>
+      <span class="value num" style="color:var(--expense-dark)">${BRL.format(s.expense)}</span>
+      <span class="sub">${periodLabel}</span>
+    </div>
+    <div class="kpi ${saldoClass}">
+      <span class="label">Saldo ${selectedMonth?'do mês':'do ano'}</span>
+      <span class="value num">${s.saldo>=0?'':'-'}${BRL.format(Math.abs(s.saldo))}</span>
+      <span class="sub">receitas − despesas</span>
+    </div>
+    ${fourthCard}
+  `;
+}
+
+/* ============ Render: gráfico de barras receita x despesa ============ */
+function renderBarChart(){
+  const svg = document.getElementById('chart-bars');
+  const W = 640, H = 260, padL = 42, padR = 8, padT = 10, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  const months = [];
+  for (let m=1; m<=12; m++) months.push(monthTotals(selectedYear, m));
+  const maxVal = Math.max(1, ...months.map(m => Math.max(m.income, m.expense)));
+  const niceMax = Math.ceil(maxVal / 500) * 500 || 500;
+
+  const groupW = plotW / 12;
+  const barW = Math.min(16, groupW*0.32);
+  const gap = 3;
+
+  let gridSvg = '';
+  const steps = 4;
+  for (let i=0;i<=steps;i++){
+    const val = niceMax * i/steps;
+    const y = padT + plotH - (val/niceMax)*plotH;
+    gridSvg += `<line class="grid-line" x1="${padL}" x2="${W-padR}" y1="${y}" y2="${y}"/>`;
+    gridSvg += `<text class="axis-label" x="${padL-6}" y="${y+3}" text-anchor="end">${Math.round(val/1000)}k</text>`;
+  }
+
+  let bars = '';
+  let highlight = '';
+  months.forEach((mo, i) => {
+    const monthNum = i+1;
+    const cx = padL + groupW*i + groupW/2;
+    const dim = selectedMonth && monthNum !== selectedMonth;
+    const op = dim ? 0.32 : 1;
+    if (selectedMonth === monthNum){
+      highlight += `<rect x="${padL+groupW*i}" y="${padT}" width="${groupW}" height="${plotH}" fill="var(--accent-soft)"></rect>`;
+    }
+    const hInc = (mo.income/niceMax)*plotH;
+    const hExp = (mo.expense/niceMax)*plotH;
+    const xInc = cx - barW - gap/2;
+    const xExp = cx + gap/2;
+    bars += `<rect class="bar-tip" data-month="${monthNum}" data-tip="${MONTH_ABBR[i]} — Receita: ${BRL2.format(mo.income)}" x="${xInc}" y="${padT+plotH-hInc}" width="${barW}" height="${Math.max(hInc,0.5)}" rx="2" fill="var(--income)" opacity="${op}"></rect>`;
+    bars += `<rect class="bar-tip" data-month="${monthNum}" data-tip="${MONTH_ABBR[i]} — Despesa: ${BRL2.format(mo.expense)}" x="${xExp}" y="${padT+plotH-hExp}" width="${barW}" height="${Math.max(hExp,0.5)}" rx="2" fill="var(--expense)" opacity="${op}"></rect>`;
+    bars += `<text class="axis-label" x="${cx}" y="${H-6}" text-anchor="middle" opacity="${dim?0.5:1}">${MONTH_ABBR[i]}</text>`;
+  });
+
+  svg.innerHTML = gridSvg + highlight + bars;
+  attachTooltips(svg);
+}
+
+/* ============ Render: gráfico de saldo acumulado ============ */
+function renderSaldoChart(){
+  const svg = document.getElementById('chart-saldo');
+  const W = 640, H = 150, padL = 46, padR = 46, padT = 16, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  let cum = 0;
+  const points = [];
+  for (let m=1; m<=12; m++){
+    const t = monthTotals(selectedYear, m);
+    cum += (t.income - t.expense);
+    points.push(cum);
+  }
+  const minV = Math.min(0, ...points);
+  const maxV = Math.max(0, ...points);
+  const range = (maxV - minV) || 1;
+
+  const x = i => padL + (plotW * i/11);
+  const y = v => padT + plotH - ((v-minV)/range)*plotH;
+  const zeroY = y(0);
+
+  const finalVal = points[points.length-1];
+  const lineColor = finalVal >= 0 ? cssVar('--income-dark') : cssVar('--expense-dark');
+
+  let d = points.map((v,i) => (i===0?'M':'L') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+  let area = d + ` L ${x(11).toFixed(1)} ${zeroY} L ${x(0).toFixed(1)} ${zeroY} Z`;
+
+  let dots = points.map((v,i) => `<circle class="bar-tip" data-month="${i+1}" data-tip="${MONTH_ABBR[i]} — Saldo acumulado: ${BRL2.format(v)}" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${selectedMonth===i+1?4.6:3.2}" fill="${lineColor}" opacity="${selectedMonth && selectedMonth!==i+1 ? 0.35:1}"/>`).join('');
+  let labels = MONTH_ABBR.map((mAbbr,i) => `<text class="axis-label" x="${x(i).toFixed(1)}" y="${H-6}" text-anchor="middle">${mAbbr}</text>`).join('');
+
+  svg.innerHTML = `
+    <line class="zero-line" x1="${padL}" x2="${W-padR}" y1="${zeroY}" y2="${zeroY}"/>
+    <path d="${area}" fill="${lineColor}" opacity="0.12" stroke="none"/>
+    <path d="${d}" fill="none" stroke="${lineColor}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    ${labels}
+    <text class="val-label" x="${x(11).toFixed(1)}" y="${(y(finalVal)-10).toFixed(1)}" text-anchor="end" fill="${lineColor}">${BRL2.format(finalVal)}</text>
+  `;
+  attachTooltips(svg);
+}
+
+/* ============ Render: categorias ============ */
+function renderCategories(){
+  const totals = categoryTotals(selectedYear, selectedMonth);
+  const total = Object.values(totals).reduce((a,b)=>a+b,0) || 1;
+  const sorted = CATEGORIES.map(c => [c, totals[c]||0]).sort((a,b) => b[1]-a[1]);
+  const maxV = Math.max(1, ...sorted.map(s=>s[1]));
+
+  document.getElementById('cat-hint').textContent = selectedMonth
+    ? `Despesas de ${MONTH_FULL[selectedMonth-1]}/${selectedYear}`
+    : `Despesas de ${selectedYear}`;
+  document.getElementById('cat-list').innerHTML = sorted.map(([cat, val]) => {
+    const pct = total ? Math.round(val/total*100) : 0;
+    const w = Math.max(2, (val/maxV)*100);
+    return `<div class="cat-row">
+      <span class="cat-name" title="${cat}">${cat}</span>
+      <span class="cat-bar-track"><span class="cat-bar-fill" style="width:${w}%; background:var(${CAT_VAR[cat]})"></span></span>
+      <span class="cat-val num">${BRL.format(val)} <span style="color:var(--ink-muted); font-weight:400;">· ${pct}%</span></span>
+    </div>`;
+  }).join('');
+}
+
+/* ============ Render: tabelas de despesas e receitas (separadas) ============ */
+function periodLabelText(){
+  return selectedMonth ? `${MONTH_FULL[selectedMonth-1]}/${selectedYear}` : `${selectedYear}`;
+}
+
+function renderExpenseTable(){
+  let rows = allTxForYear(selectedYear).filter(r => r.type === 'despesa');
+  if (selectedMonth) rows = rows.filter(r => r.month === selectedMonth);
+  if (expSearch.trim()){
+    const q = expSearch.trim().toLowerCase();
+    rows = rows.filter(r => r.desc.toLowerCase().includes(q));
+  }
+  const total = rows.reduce((a,r) => a+r.value, 0);
+  document.getElementById('exp-hint').textContent = `${rows.length} · ${BRL.format(total)} em ${periodLabelText()}`;
+
+  const paidTotal = rows.filter(r => isPaid(r.id)).reduce((a,r) => a+r.value, 0);
+  const pendingTotal = total - paidTotal;
+  const summaryEl = document.getElementById('paid-summary');
+  if (summaryEl){
+    summaryEl.innerHTML = `
+      <div class="paid-stat is-paid">
+        <span class="paid-stat-label">Pago</span>
+        <span class="paid-stat-value num">${BRL.format(paidTotal)}</span>
+      </div>
+      <div class="paid-stat is-pending">
+        <span class="paid-stat-label">A pagar</span>
+        <span class="paid-stat-value num">${BRL.format(pendingTotal)}</span>
+      </div>
+    `;
+  }
+
+  const body = document.getElementById('exp-body');
+  if (!rows.length){
+    body.innerHTML = `<tr class="empty-row"><td colspan="6">Nenhuma despesa encontrada.</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map(r => {
+    const paid = isPaid(r.id);
+    return `
+    <tr>
+      <td class="cell-month">${MONTH_ABBR[r.month-1]}/${String(r.year).slice(2)}</td>
+      <td class="tx-desc">${escapeHtml(r.desc)}</td>
+      <td class="tag-cat">${r.category ? escapeHtml(r.category) : '—'}</td>
+      <td class="amt num despesa">- ${BRL2.format(r.value)}</td>
+      <td class="cell-status"><label class="paid-toggle ${paid ? 'is-paid' : ''}"><input type="checkbox" data-paid-toggle="${r.id}" ${paid ? 'checked' : ''}>${paid ? '✓ Pago' : 'A pagar'}</label></td>
+      <td class="cell-actions">${r.manual ? `<span class="row-actions"><button class="edit-btn" data-edit-exp="${r.id}" title="Editar despesa" aria-label="Editar despesa">✎</button><button class="del-btn" data-del="${r.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span>` : ''}</td>
+    </tr>
+  `;
+  }).join('');
+  body.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', () => deleteEntry(btn.dataset.del));
+  });
+  body.querySelectorAll('[data-edit-exp]').forEach(btn => {
+    btn.addEventListener('click', () => openEditExpense(btn.dataset.editExp));
+  });
+  body.querySelectorAll('[data-paid-toggle]').forEach(cb => {
+    cb.addEventListener('change', () => togglePaid(cb.dataset.paidToggle));
+  });
+}
+
+function renderIncomeTable(){
+  let rows = allTxForYear(selectedYear).filter(r => r.type === 'receita');
+  if (selectedMonth) rows = rows.filter(r => r.month === selectedMonth);
+  if (incSearch.trim()){
+    const q = incSearch.trim().toLowerCase();
+    rows = rows.filter(r => r.desc.toLowerCase().includes(q));
+  }
+  const total = rows.reduce((a,r) => a+r.value, 0);
+  document.getElementById('inc-hint').textContent = `${rows.length} · ${BRL.format(total)} em ${periodLabelText()}`;
+
+  const body = document.getElementById('inc-body');
+  if (!rows.length){
+    body.innerHTML = `<tr class="empty-row"><td colspan="4">Nenhuma receita encontrada.</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td class="cell-month">${MONTH_ABBR[r.month-1]}/${String(r.year).slice(2)}</td>
+      <td class="tx-desc">${escapeHtml(r.desc)}</td>
+      <td class="amt num receita">+ ${BRL2.format(r.value)}</td>
+      <td class="cell-actions">${r.manual ? `<span class="row-actions"><button class="edit-btn" data-edit-inc="${r.id}" title="Editar receita" aria-label="Editar receita">✎</button><button class="del-btn" data-del="${r.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span>` : ''}</td>
+    </tr>
+  `).join('');
+  body.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', () => deleteEntry(btn.dataset.del));
+  });
+  body.querySelectorAll('[data-edit-inc]').forEach(btn => {
+    btn.addEventListener('click', () => openEditIncome(btn.dataset.editInc));
+  });
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============ Tooltip helper ============ */
+function attachTooltips(svg){
+  const tip = document.getElementById('tooltip');
+  svg.querySelectorAll('[data-tip]').forEach(el => {
+    el.addEventListener('mousemove', ev => {
+      tip.textContent = el.dataset.tip;
+      tip.style.left = ev.clientX + 'px';
+      tip.style.top = ev.clientY + 'px';
+      tip.style.opacity = '1';
+    });
+    el.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+    if (el.dataset.month){
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => {
+        const m = parseInt(el.dataset.month, 10);
+        selectedMonth = (selectedMonth === m) ? null : m;
+        renderAll();
+      });
+    }
+  });
+}
+
+/* ============ Render tudo ============ */
+function renderAll(){
+  renderFilters();
+  renderKPIs();
+  renderBarChart();
+  renderSaldoChart();
+  renderCategories();
+  renderExpenseTable();
+  renderIncomeTable();
+}
+
+/* ============ Modais ============ */
+let editingExpenseId = null;
+let editingIncomeId = null;
+
+function openModal(id){
+  document.getElementById(id).hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id){
+  document.getElementById(id).hidden = true;
+  document.body.style.overflow = '';
+  if (id === 'modal-expense') editingExpenseId = null;
+  if (id === 'modal-income') editingIncomeId = null;
+}
+
+function setExpenseModalMode(editing){
+  document.getElementById('exp-modal-title').textContent = editing ? 'Editar despesa' : 'Registrar despesa';
+  document.getElementById('exp-modal-sub').textContent = editing ? 'Altere os dados e salve para atualizar este lançamento.' : 'Adiciona um novo gasto ao mês correspondente.';
+  document.getElementById('exp-submit-btn').textContent = editing ? 'Salvar alterações' : 'Salvar despesa';
+}
+function setIncomeModalMode(editing){
+  document.getElementById('inc-modal-title').textContent = editing ? 'Editar receita' : 'Registrar receita';
+  document.getElementById('inc-modal-sub').textContent = editing ? 'Altere os dados e salve para atualizar este lançamento.' : 'Adiciona uma nova entrada de dinheiro ao mês correspondente.';
+  document.getElementById('inc-submit-btn').textContent = editing ? 'Salvar alterações' : 'Salvar receita';
+}
+
+function openEditExpense(id){
+  const entry = findEntry(id);
+  if (!entry) return;
+  editingExpenseId = id;
+  setExpenseModalMode(true);
+  document.getElementById('exp-desc').value = entry.desc;
+  document.getElementById('exp-value').value = entry.value;
+  document.getElementById('exp-cat').value = entry.category || 'Outros';
+  document.getElementById('exp-date').value = entry.date;
+  openModal('modal-expense');
+  document.getElementById('exp-desc').focus();
+}
+function openEditIncome(id){
+  const entry = findEntry(id);
+  if (!entry) return;
+  editingIncomeId = id;
+  setIncomeModalMode(true);
+  document.getElementById('inc-desc').value = entry.desc;
+  document.getElementById('inc-value').value = entry.value;
+  document.getElementById('inc-date').value = entry.date;
+  openModal('modal-income');
+  document.getElementById('inc-desc').focus();
+}
+
+document.getElementById('btn-open-expense').addEventListener('click', () => {
+  editingExpenseId = null;
+  document.getElementById('form-expense').reset();
+  setExpenseModalMode(false);
+  document.getElementById('exp-date').value = todayISO();
+  openModal('modal-expense');
+  document.getElementById('exp-desc').focus();
+});
+document.getElementById('btn-open-income').addEventListener('click', () => {
+  editingIncomeId = null;
+  document.getElementById('form-income').reset();
+  setIncomeModalMode(false);
+  document.getElementById('inc-date').value = todayISO();
+  openModal('modal-income');
+  document.getElementById('inc-desc').focus();
+});
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => closeModal(btn.dataset.close));
+});
+document.querySelectorAll('.modal-backdrop').forEach(bd => {
+  bd.addEventListener('click', ev => { if (ev.target === bd) closeModal(bd.id); });
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape'){
+    document.querySelectorAll('.modal-backdrop').forEach(bd => { if (!bd.hidden) closeModal(bd.id); });
+  }
+});
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+document.getElementById('exp-cat').innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+
+document.getElementById('form-expense').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const desc = document.getElementById('exp-desc').value.trim().toUpperCase();
+  const value = parseFloat(document.getElementById('exp-value').value);
+  const category = document.getElementById('exp-cat').value;
+  const date = document.getElementById('exp-date').value;
+  if (!desc || !isFinite(value) || value <= 0 || !date) return;
+  if (editingExpenseId){
+    await updateEntry(editingExpenseId, { desc, value, category, date });
+    showToast('Despesa atualizada.');
+  } else {
+    await addEntry({ type:'despesa', desc, value, category, date, createdAt: new Date().toISOString() });
+    showToast('Despesa registrada.');
+  }
+  ev.target.reset();
+  closeModal('modal-expense');
+  const y = parseInt(date.slice(0,4),10);
+  const m = parseInt(date.slice(5,7),10);
+  if (!isNaN(y)) selectedYear = y;
+  if (!isNaN(m)) selectedMonth = m;
+  renderAll();
+});
+
+document.getElementById('form-income').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const desc = document.getElementById('inc-desc').value.trim().toUpperCase();
+  const value = parseFloat(document.getElementById('inc-value').value);
+  const date = document.getElementById('inc-date').value;
+  if (!desc || !isFinite(value) || value <= 0 || !date) return;
+  if (editingIncomeId){
+    await updateEntry(editingIncomeId, { desc, value, date });
+    showToast('Receita atualizada.');
+  } else {
+    await addEntry({ type:'receita', desc, value, category:null, date, createdAt: new Date().toISOString() });
+    showToast('Receita registrada.');
+  }
+  ev.target.reset();
+  closeModal('modal-income');
+  const y = parseInt(date.slice(0,4),10);
+  const m = parseInt(date.slice(5,7),10);
+  if (!isNaN(y)) selectedYear = y;
+  if (!isNaN(m)) selectedMonth = m;
+  renderAll();
+});
+
+document.getElementById('exp-search').addEventListener('input', ev => {
+  expSearch = ev.target.value;
+  renderExpenseTable();
+});
+document.getElementById('inc-search').addEventListener('input', ev => {
+  incSearch = ev.target.value;
+  renderIncomeTable();
+});
+
+window.addEventListener('resize', () => { renderBarChart(); renderSaldoChart(); });
+
+/* ============ Boot ============ */
+let booted = false;
+async function boot(){
+  if (booted) return;
+  booted = true;
+  initStorage();
+  initPaidStorage();
+  renderAll();
+}
+
+/* Resolve a conexão com o banco (db) uma única vez, antes mesmo do login,
+   para que os usuários/senhas salvos fiquem disponíveis para validar o
+   acesso assim que alguém tentar entrar. */
+(async function resolveDb(){
+  try{
+    if (window.claude && window.claude.use){
+      db = await window.claude.use('db');
+    }
+  }catch(e){ db = null; }
+  initAuthStorage();
+})();
+
+document.getElementById('auth-pass').focus();
+</script>
