@@ -738,6 +738,7 @@ let db = null;
 let usingLocal = false;
 let selectedYear = null;
 let selectedMonth = null; // null = ano inteiro, 1-12 = mês específico
+let monthDefaultApplied = false; // garante que o mês atual só é aplicado como padrão uma vez, no carregamento inicial
 let expSearch = '';
 let incSearch = '';
 
@@ -1197,6 +1198,15 @@ function renderFilters(){
     const curYearReal = new Date().getFullYear();
     const withData = years.filter(y => y <= curYearReal && (HIST.some(m=>m.y===y) || entries.some(e=>entryYear(e)===y)));
     selectedYear = withData.length ? withData[withData.length-1] : curYearReal;
+  }
+
+  // ao abrir o app pela primeira vez, mostra por padrão o mês atual (não o ano
+  // inteiro); depois disso o usuário é livre para trocar para "Ano inteiro" ou
+  // outro mês sem que essa escolha seja sobrescrita nos próximos renders
+  if (!monthDefaultApplied){
+    monthDefaultApplied = true;
+    const now = new Date();
+    if (selectedYear === now.getFullYear()) selectedMonth = now.getMonth() + 1;
   }
 
   const yearSelect = document.getElementById('year-select');
