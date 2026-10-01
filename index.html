@@ -284,82 +284,45 @@
   .del-btn:hover{background:var(--surface-2); color:var(--expense);}
   .edit-btn:hover{background:var(--surface-2); color:var(--accent);}
   .empty-row td{text-align:center; color:var(--ink-muted); padding:28px 12px;}
-  /* Só existem pra forçar quebra de linha no cartão mobile (ver media query
-     abaixo); no desktop a tabela normal não precisa delas. */
-  table.tx td.row-break{display:none;}
 
-  /* ---------- Larguras fixas da tabela (desktop/tablet) ----------
-     Sem isso a tabela usa table-layout:auto e o navegador calcula a largura
-     "ideal" somando o texto de cada célula sem quebrar linha (chegava a
-     ~717px de largura mínima mesmo o cartão tendo só ~580px disponíveis),
-     daí a rolagem lateral dentro do cartão de Despesas/Receitas. Com
-     table-layout:fixed + porcentagem em cada coluna a tabela sempre cabe no
-     espaço do cartão; Descrição e Categoria truncam com "..." quando o texto
-     é mais longo que a coluna, em vez de esticar a tabela. */
-  @media (min-width:601px){
-    table.tx{table-layout:fixed;}
-    /* Reticências só nas colunas de texto livre (Descrição/Categoria) --
-       nas outras (mês, vencimento, valor, status, ações) o conteúdo tem
-       tamanho previsível e truncar com "..." só cortava o selo Pago/A
-       pagar de forma estranha quando a coluna ficava um pouco justa. */
-    table.tx td{white-space:nowrap;}
-    table.tx td.tx-desc, table.tx td.tag-cat{overflow:hidden; text-overflow:ellipsis;}
-
-    .tx-card-expense table.tx .cell-month{width:12%;}
-    .tx-card-expense table.tx .tx-desc{width:19%;}
-    .tx-card-expense table.tx .tag-cat{width:12%;}
-    .tx-card-expense table.tx .cell-due{width:10%;}
-    .tx-card-expense table.tx .amt{width:20%;}
-    /* Reduzida e alinhada à direita (encostando perto do lápis de edição)
-       em vez de ocupar uma coluna larga com o selo "Pago"/"A pagar" solto
-       no canto esquerdo -- isso fechava o espaço vazio entre o selo e os
-       ícones de editar/excluir. */
-    .tx-card-expense table.tx .cell-status{width:13%; text-align:right;}
-    .tx-card-expense table.tx .cell-actions{width:14%;}
-
-    .tx-card-income table.tx .cell-month{width:13%;}
-    .tx-card-income table.tx .tx-desc{width:46%;}
-    .tx-card-income table.tx .amt{width:26%;}
-    .tx-card-income table.tx .cell-actions{width:15%;}
+  /* ---------- Lista de lançamentos em cartões (mobile e desktop) ----------
+     Mesmo formato em qualquer tamanho de tela agora: cada lançamento é um
+     cartão (descrição em cima, valor e selo Pago/A pagar logo abaixo, mês/
+     categoria/vencimento numa linha discreta, ações no canto). Evita de vez
+     o problema de alinhar colunas de tabela de largura variável. */
+  .month-close-bar{flex-wrap:wrap;}
+  .tx-table-wrap{overflow-x:visible; border:none;}
+  table.tx{min-width:0; width:100%; border-collapse:separate; border-spacing:0 8px;}
+  table.tx thead{display:none;}
+  table.tx tbody{display:block;}
+  table.tx tr{
+    display:flex; flex-wrap:wrap; align-items:center; gap:1px 10px;
+    border:1px solid var(--border); border-radius:12px; padding:10px 12px;
+    background:var(--surface);
   }
-
-  /* Em telas de celular a tabela vira uma lista de cartões, sem precisar
-     rolar pro lado para ver as colunas. */
-  @media (max-width:600px){
-    .month-close-bar{flex-wrap:wrap;}
-    .tx-table-wrap{overflow-x:visible; border:none;}
-    table.tx{min-width:0; width:100%; border-collapse:separate; border-spacing:0 8px;}
-    table.tx thead{display:none;}
-    table.tx tbody{display:block;}
-    table.tx tr{
-      display:flex; flex-wrap:wrap; align-items:center; gap:1px 10px;
-      border:1px solid var(--border); border-radius:12px; padding:10px 12px;
-      background:var(--surface);
-    }
-    table.tx tr:hover{background:var(--surface);}
-    table.tx tr.empty-row{display:block; text-align:center; padding:24px 12px; border-style:dashed;}
-    table.tx tr.empty-row td{padding:0;}
-    table.tx td{border:none; padding:0; vertical-align:baseline;}
-    table.tx td.tx-desc{order:1; flex:1 1 100%; text-align:left; white-space:normal;}
-    table.tx td.cell-month{order:3; flex:0 0 auto; font-size:.72rem; color:var(--ink-muted);}
-    table.tx td.tag-cat{order:3; flex:0 0 auto;}
-    table.tx td.cell-month::after{content:" ·"; margin-inline-end:6px;}
-    table.tx td.cell-due{order:3; flex:0 0 auto; font-size:.72rem; color:var(--ink-muted);}
-    table.tx td.cell-due:empty{display:none;}
-    table.tx td.amt{order:2; flex:0 0 auto; text-align:left; padding-block:2px 2px;}
-    table.tx td.cell-status{order:2; flex:0 0 auto; margin-inline-start:auto;}
-    table.tx td.cell-actions{order:4; flex:0 0 auto; margin-inline-start:auto;}
-    table.tx td.cell-actions .row-actions{justify-content:flex-end;}
-    /* Força quebra de linha entre os grupos (valor+status / mês+categoria+
-       vencimento / ações), senão o navegador deixa esses pedaços "subirem"
-       pra linha de cima quando sobra espaço, e o selo Pago/A pagar acaba em
-       uma posição horizontal diferente em cada cartão (o desalinhamento
-       reportado). Com a quebra, cada grupo sempre fica na sua própria linha
-       e o selo sempre encosta na borda direita do cartão. */
-    table.tx td.row-break{display:block; flex-basis:100%; width:0; height:0; padding:0; margin:0; border:0; overflow:hidden;}
-    table.tx td.row-break-status{order:2;}
-    table.tx td.row-break-meta{order:3;}
-  }
+  table.tx tr:hover{background:var(--surface);}
+  table.tx tr.empty-row{display:block; text-align:center; padding:24px 12px; border-style:dashed;}
+  table.tx tr.empty-row td{padding:0;}
+  table.tx td{border:none; padding:0; vertical-align:baseline;}
+  table.tx td.tx-desc{order:1; flex:1 1 100%; text-align:left; white-space:normal;}
+  table.tx td.cell-month{order:3; flex:0 0 auto; font-size:.72rem; color:var(--ink-muted);}
+  table.tx td.tag-cat{order:3; flex:0 0 auto;}
+  table.tx td.cell-month::after{content:" ·"; margin-inline-end:6px;}
+  table.tx td.cell-due{order:3; flex:0 0 auto; font-size:.72rem; color:var(--ink-muted);}
+  table.tx td.cell-due:empty{display:none;}
+  table.tx td.amt{order:2; flex:0 0 auto; text-align:left; padding-block:2px 2px;}
+  table.tx td.cell-status{order:2; flex:0 0 auto; margin-inline-start:auto;}
+  table.tx td.cell-actions{order:4; flex:0 0 auto; margin-inline-start:auto;}
+  table.tx td.cell-actions .row-actions{justify-content:flex-end;}
+  /* Força quebra de linha entre os grupos (valor+status / mês+categoria+
+     vencimento / ações), senão o navegador deixa esses pedaços "subirem"
+     pra linha de cima quando sobra espaço, e o selo Pago/A pagar acaba em
+     uma posição horizontal diferente em cada cartão (o desalinhamento
+     reportado). Com a quebra, cada grupo sempre fica na sua própria linha
+     e o selo sempre encosta na borda direita do cartão. */
+  table.tx td.row-break{display:block; flex-basis:100%; width:0; height:0; padding:0; margin:0; border:0; overflow:hidden;}
+  table.tx td.row-break-status{order:2;}
+  table.tx td.row-break-meta{order:3;}
 
   .footnote{font-size:.78rem; color:var(--ink-muted); margin-block-start:10px; line-height:1.5;}
 
