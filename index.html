@@ -687,6 +687,13 @@
         <div class="color-field"><label for="theme-income">Verde (receitas)</label><input type="color" id="theme-income"></div>
         <div class="color-field"><label for="theme-expense">Vermelho (despesas)</label><input type="color" id="theme-expense"></div>
       </div>
+      <div class="theme-group">
+        <h4>Pago / A pagar</h4>
+        <div class="color-field"><label for="theme-income-dark">Texto "Pago"</label><input type="color" id="theme-income-dark"></div>
+        <div class="color-field"><label for="theme-income-soft">Fundo "Pago"</label><input type="color" id="theme-income-soft"></div>
+        <div class="color-field"><label for="theme-expense-dark">Texto "A pagar"</label><input type="color" id="theme-expense-dark"></div>
+        <div class="color-field"><label for="theme-expense-soft">Fundo "A pagar"</label><input type="color" id="theme-expense-soft"></div>
+      </div>
     </div>
 
     <div class="modal-actions">
@@ -924,12 +931,17 @@ const THEME_FIELDS = [
   {key:'accent', varName:'--accent', id:'theme-accent'},
   {key:'income', varName:'--income', id:'theme-income'},
   {key:'expense', varName:'--expense', id:'theme-expense'},
+  {key:'incomeDark', varName:'--income-dark', id:'theme-income-dark'},
+  {key:'incomeSoft', varName:'--income-soft', id:'theme-income-soft'},
+  {key:'expenseDark', varName:'--expense-dark', id:'theme-expense-dark'},
+  {key:'expenseSoft', varName:'--expense-soft', id:'theme-expense-soft'},
 ];
 const THEME_SHADOW_ID = 'theme-shadow';
 const THEME_DEFAULTS = {
   bg:'#1b3fe0', surface:'#ffffff', surface2:'#eef1fb', border:'#e1e6f6',
   ink:'#151f45', ink2:'#47517a', inkMuted:'#171717',
   accent:'#3cb043', income:'#3cb043', expense:'#e53935',
+  incomeDark:'#2b8930', incomeSoft:'#e3f7e4', expenseDark:'#c62828', expenseSoft:'#fde8e7',
   shadow:'#0a1450',
 };
 let themeModalBaseline = null; // valores salvos quando o modal foi aberto, pra "Cancelar" poder reverter a pré-visualização
@@ -1928,8 +1940,12 @@ function closeModal(id){
   // clicado em "Salvar cores".
   if (id === 'modal-theme'){
     if (typeof themeModalBaseline !== 'undefined'){
+      /* Limpa tudo primeiro: se o tema salvo é de antes de algum campo novo
+         existir (ex.: cores de "Pago/A pagar"), ele não tem essa chave, e só
+         re-aplicar o baseline por cima deixaria a pré-visualização não salva
+         desse campo "grudada" em vez de voltar ao padrão. */
+      clearThemeOverrides();
       if (themeModalBaseline) applyThemeValues(themeModalBaseline);
-      else clearThemeOverrides();
     }
   }
 }
