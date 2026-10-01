@@ -273,6 +273,9 @@
   .del-btn:hover{background:var(--surface-2); color:var(--expense);}
   .edit-btn:hover{background:var(--surface-2); color:var(--accent);}
   .empty-row td{text-align:center; color:var(--ink-muted); padding:28px 12px;}
+  /* Só existem pra forçar quebra de linha no cartão mobile (ver media query
+     abaixo); no desktop a tabela normal não precisa delas. */
+  table.tx td.row-break{display:none;}
 
   /* Em telas de celular a tabela vira uma lista de cartões, sem precisar
      rolar pro lado para ver as colunas. */
@@ -301,6 +304,15 @@
     table.tx td.cell-status{order:2; flex:0 0 auto; margin-inline-start:auto;}
     table.tx td.cell-actions{order:4; flex:0 0 auto; margin-inline-start:auto;}
     table.tx td.cell-actions .row-actions{justify-content:flex-end;}
+    /* Força quebra de linha entre os grupos (valor+status / mês+categoria+
+       vencimento / ações), senão o navegador deixa esses pedaços "subirem"
+       pra linha de cima quando sobra espaço, e o selo Pago/A pagar acaba em
+       uma posição horizontal diferente em cada cartão (o desalinhamento
+       reportado). Com a quebra, cada grupo sempre fica na sua própria linha
+       e o selo sempre encosta na borda direita do cartão. */
+    table.tx td.row-break{display:block; flex-basis:100%; width:0; height:0; padding:0; margin:0; border:0; overflow:hidden;}
+    table.tx td.row-break-status{order:2;}
+    table.tx td.row-break-meta{order:3;}
   }
 
   .footnote{font-size:.78rem; color:var(--ink-muted); margin-block-start:10px; line-height:1.5;}
@@ -1540,8 +1552,10 @@ function renderExpenseTable(){
       <td class="tx-desc">${escapeHtml(r.desc)}</td>
       <td class="tag-cat">${r.category ? escapeHtml(r.category) : '—'}</td>
       <td class="cell-due">${r.dueDate ? formatDueDate(r.dueDate) : ''}</td>
+      <td class="row-break row-break-meta" aria-hidden="true"></td>
       <td class="amt num despesa ${paid ? 'is-paid' : ''}">- ${BRL2.format(r.value)}</td>
       <td class="cell-status">${statusCell}</td>
+      <td class="row-break row-break-status" aria-hidden="true"></td>
       <td class="cell-actions">${r.manual ? `<span class="row-actions"><button class="edit-btn" data-edit-exp="${r.id}" title="Editar despesa" aria-label="Editar despesa">✎</button><button class="del-btn" data-del="${r.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span>` : ''}</td>
     </tr>
   `;
