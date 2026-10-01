@@ -48,6 +48,14 @@
   }
 
   *{box-sizing:border-box;}
+  html{
+    background:var(--bg);
+    /* evita que o título/cabeçalho fique colado ou escondido atrás da barra de
+       status / notch do celular (a página pede viewport-fit=cover, então tem
+       que empurrar o conteúdo pra baixo dessa área por conta própria) */
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
   body{
     background:var(--bg); color:var(--ink);
     font-family:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
