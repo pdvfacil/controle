@@ -113,10 +113,11 @@
   .kpi{
     background:var(--surface); border:1px solid var(--border); border-radius:18px;
     padding:16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;
+    min-width:0;
   }
-  .kpi .label{font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); font-weight:600;}
-  .kpi .value{font-size:1.5rem; font-weight:600;}
-  .kpi .sub{font-size:.76rem; color:var(--ink-muted);}
+  .kpi .label{font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); font-weight:600; overflow-wrap:break-word;}
+  .kpi .value{font-size:1.5rem; font-weight:600; overflow-wrap:break-word;}
+  .kpi .sub{font-size:.76rem; color:var(--ink-muted); overflow-wrap:break-word;}
   .kpi.saldo-pos .value{color:var(--income-dark);}
   .kpi.saldo-neg .value{color:var(--expense-dark);}
 
