@@ -80,7 +80,11 @@
     max-width:100%;
     position:relative;
   }
-  .wrap{max-width:1080px; margin:0 auto; padding-inline:20px;}
+  /* 1320px (em vez de 1080px): no notebook/desktop sobrava muita área azul
+     vazia nas laterais, e os cartões de Despesas/Receitas ficavam mais
+     estreitos que a tabela interna (que precisa de pelo menos 560px),
+     forçando rolagem lateral dentro do cartão pra ver a coluna de valor. */
+  .wrap{max-width:1320px; margin:0 auto; padding-inline:20px;}
   h1,h2,h3{font-family:"Fraunces", Georgia, serif; font-weight:600; text-wrap:balance; margin:0;}
   .num{font-family:"IBM Plex Mono", "IBM Plex Sans", monospace; font-variant-numeric:tabular-nums;}
   a{color:inherit;}
@@ -195,8 +199,16 @@
   .cat-row .cat-val{flex:0 0 auto; font-size:.78rem; font-weight:600; width:84px; text-align:right;}
 
   /* ---------- Transactions ---------- */
-  .tx-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-  @media (max-width:820px){ .tx-row{grid-template-columns:1fr;} }
+  /* minmax(0, 1fr) em vez de só "1fr" -- mesmo motivo do grid dos KPIs: sem
+     isso a coluna do grid cresce pelo conteúdo mínimo da tabela interna (que
+     não quebra linha) em vez de respeitar o espaço disponível, empurrando o
+     cartão pra fora e forçando rolagem lateral. */
+  .tx-row{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px;}
+  /* 1100px (em vez de 820px): logo acima de 820 os dois cartões ficavam com
+     ~330px cada -- estreito demais pra tabela de 7 colunas (Despesas) não
+     truncar os valores. Empilhando até 1100px garante que, quando os dois
+     cartões aparecem lado a lado, cada um já tem espaço confortável. */
+  @media (max-width:1100px){ .tx-row{grid-template-columns:1fr;} }
   .tx-card{margin-block-end:0;}
   .tx-card-expense{border-top:3px solid var(--expense);}
   .tx-card-income{border-top:3px solid var(--income);}
@@ -244,7 +256,7 @@
   .btn-close-month:hover{filter:brightness(.95);}
 
   .tx-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:12px;}
-  table.tx{width:100%; border-collapse:collapse; font-size:.84rem; min-width:560px;}
+  table.tx{width:100%; border-collapse:collapse; font-size:.84rem;}
   table.tx th{
     text-align:left; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
     color:var(--ink-muted); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--border);
@@ -276,6 +288,37 @@
   /* Só existem pra forçar quebra de linha no cartão mobile (ver media query
      abaixo); no desktop a tabela normal não precisa delas. */
   table.tx td.row-break{display:none;}
+
+  /* ---------- Larguras fixas da tabela (desktop/tablet) ----------
+     Sem isso a tabela usa table-layout:auto e o navegador calcula a largura
+     "ideal" somando o texto de cada célula sem quebrar linha (chegava a
+     ~717px de largura mínima mesmo o cartão tendo só ~580px disponíveis),
+     daí a rolagem lateral dentro do cartão de Despesas/Receitas. Com
+     table-layout:fixed + porcentagem em cada coluna a tabela sempre cabe no
+     espaço do cartão; Descrição e Categoria truncam com "..." quando o texto
+     é mais longo que a coluna, em vez de esticar a tabela. */
+  @media (min-width:601px){
+    table.tx{table-layout:fixed;}
+    /* Reticências só nas colunas de texto livre (Descrição/Categoria) --
+       nas outras (mês, vencimento, valor, status, ações) o conteúdo tem
+       tamanho previsível e truncar com "..." só cortava o selo Pago/A
+       pagar de forma estranha quando a coluna ficava um pouco justa. */
+    table.tx td{white-space:nowrap;}
+    table.tx td.tx-desc, table.tx td.tag-cat{overflow:hidden; text-overflow:ellipsis;}
+
+    .tx-card-expense table.tx .cell-month{width:12%;}
+    .tx-card-expense table.tx .tx-desc{width:14%;}
+    .tx-card-expense table.tx .tag-cat{width:8%;}
+    .tx-card-expense table.tx .cell-due{width:11%;}
+    .tx-card-expense table.tx .amt{width:20%;}
+    .tx-card-expense table.tx .cell-status{width:18%;}
+    .tx-card-expense table.tx .cell-actions{width:17%;}
+
+    .tx-card-income table.tx .cell-month{width:13%;}
+    .tx-card-income table.tx .tx-desc{width:46%;}
+    .tx-card-income table.tx .amt{width:26%;}
+    .tx-card-income table.tx .cell-actions{width:15%;}
+  }
 
   /* Em telas de celular a tabela vira uma lista de cartões, sem precisar
      rolar pro lado para ver as colunas. */
@@ -471,7 +514,7 @@
       <div class="tx-table-wrap">
         <table class="tx">
           <thead>
-            <tr><th>Mês</th><th>Descrição</th><th>Categoria</th><th>Vencimento</th><th style="text-align:right">Valor</th><th>Status</th><th></th></tr>
+            <tr><th class="cell-month">Mês</th><th class="tx-desc">Descrição</th><th class="tag-cat">Categoria</th><th class="cell-due">Vencimento</th><th class="amt" style="text-align:right">Valor</th><th class="cell-status">Status</th><th class="cell-actions"></th></tr>
           </thead>
           <tbody id="exp-body"></tbody>
         </table>
@@ -488,7 +531,7 @@
       <div class="tx-table-wrap">
         <table class="tx">
           <thead>
-            <tr><th>Mês</th><th>Descrição</th><th style="text-align:right">Valor</th><th></th></tr>
+            <tr><th class="cell-month">Mês</th><th class="tx-desc">Descrição</th><th class="amt" style="text-align:right">Valor</th><th class="cell-actions"></th></tr>
           </thead>
           <tbody id="inc-body"></tbody>
         </table>
@@ -1549,8 +1592,8 @@ function renderExpenseTable(){
     return `
     <tr>
       <td class="cell-month">${MONTH_ABBR[r.month-1]}/${String(r.year).slice(2)}</td>
-      <td class="tx-desc">${escapeHtml(r.desc)}</td>
-      <td class="tag-cat">${r.category ? escapeHtml(r.category) : '—'}</td>
+      <td class="tx-desc" title="${escapeHtml(r.desc)}">${escapeHtml(r.desc)}</td>
+      <td class="tag-cat" title="${r.category ? escapeHtml(r.category) : ''}">${r.category ? escapeHtml(r.category) : '—'}</td>
       <td class="cell-due">${r.dueDate ? formatDueDate(r.dueDate) : ''}</td>
       <td class="row-break row-break-meta" aria-hidden="true"></td>
       <td class="amt num despesa ${paid ? 'is-paid' : ''}">- ${BRL2.format(r.value)}</td>
@@ -1604,7 +1647,7 @@ function renderIncomeTable(){
   body.innerHTML = rows.map(r => `
     <tr>
       <td class="cell-month">${MONTH_ABBR[r.month-1]}/${String(r.year).slice(2)}</td>
-      <td class="tx-desc">${escapeHtml(r.desc)}</td>
+      <td class="tx-desc" title="${escapeHtml(r.desc)}">${escapeHtml(r.desc)}</td>
       <td class="amt num receita">+ ${BRL2.format(r.value)}</td>
       <td class="cell-actions">${r.manual ? `<span class="row-actions"><button class="edit-btn" data-edit-inc="${r.id}" title="Editar receita" aria-label="Editar receita">✎</button><button class="del-btn" data-del="${r.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span>` : ''}</td>
     </tr>
