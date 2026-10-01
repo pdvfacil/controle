@@ -810,7 +810,7 @@ async function addEntry(entry){
 }
 
 async function deleteEntry(id){
-  if (db && !usingLocal && !String(id).startsWith('local-')){
+  if (db && !usingLocal){
     try{ await db.collection('livro_caixa_entries').doc(id).delete(); return; }
     catch(e){ console.warn('delete failed', e); }
   }
@@ -820,7 +820,7 @@ async function deleteEntry(id){
 }
 
 async function updateEntry(id, data){
-  if (db && !usingLocal && !String(id).startsWith('local-')){
+  if (db && !usingLocal){
     try{ await db.collection('livro_caixa_entries').doc(id).update(data); return true; }
     catch(e){ console.warn('update failed', e); }
   }
