@@ -655,7 +655,7 @@
 <div class="modal-backdrop" id="modal-theme" hidden>
   <form class="modal modal-theme" id="form-theme">
     <h3>Cores do tema</h3>
-    <p class="modal-sub">Mude cada cor individualmente. A pré-visualização é na hora; clique em "Salvar cores" pra manter.</p>
+    <p class="modal-sub">Mude cada cor individualmente. A pré-visualização é na hora; clique em "Salvar cores" pra manter e sincronizar em todos os aparelhos.</p>
 
     <div class="theme-grid">
       <div class="theme-group">
@@ -927,6 +927,7 @@ const THEME_DEFAULTS = {
   shadow:'#0a1450',
 };
 let themeModalBaseline = null; // valores salvos quando o modal foi aberto, pra "Cancelar" poder reverter a pré-visualização
+let usingLocalTheme = false; // true se o Firestore não estiver disponível -- aí as cores ficam só no localStorage deste aparelho
 
 function hexToRgbTriplet(hex){
   const m = (hex || '').replace('#','');
@@ -966,6 +967,46 @@ function loadCustomTheme(){
 }
 function saveCustomTheme(values){
   try{ localStorage.setItem(THEME_KEY, JSON.stringify(values)); }catch(e){}
+}
+// Grava a paleta no Firestore (mesmo projeto/coleções do resto do app) pra
+// sincronizar entre todos os aparelhos onde Jaylson/Camila acessam o painel --
+// localStorage continua sendo o cache rápido que aplica a cor antes mesmo de
+// logar e o fallback caso o Firestore esteja fora do ar.
+function saveCustomThemeRemote(values){
+  if (db && !usingLocal && !usingLocalTheme){
+    db.collection('livro_caixa_settings').doc('theme').set({ values, updatedAt: new Date().toISOString() })
+      .catch(e => { console.warn('theme write failed, using local fallback', e); usingLocalTheme = true; });
+  }
+}
+// Assina o documento de tema no Firestore: assim que qualquer aparelho salva
+// uma cor nova, todos os outros (já abertos ou abrindo agora) recebem a
+// atualização sozinhos, sem precisar recarregar a página.
+function initThemeStorage(){
+  if (db && !usingLocal){
+    try{
+      db.collection('livro_caixa_settings').doc('theme').onSnapshot(
+        snap => {
+          const data = snap.exists ? snap.data() : null;
+          if (data && data.values){
+            saveCustomTheme(data.values); // mantém o cache local deste aparelho em dia
+            const modalIsOpen = !document.getElementById('modal-theme').hidden;
+            themeModalBaseline = data.values;
+            // Se o modal de cores estiver aberto nesse momento (alguém editando
+            // enquanto chega uma atualização de outro aparelho), não mexe na
+            // pré-visualização em andamento -- só atualiza o que "Cancelar" vai
+            // restaurar, evitando puxar o tapete do que a pessoa está ajustando.
+            if (!modalIsOpen) applyThemeValues(data.values);
+          }
+        },
+        err => {
+          console.warn('theme snapshot error, falling back to local', err);
+          usingLocalTheme = true;
+        }
+      );
+      return;
+    }catch(e){ /* cai pro fallback local abaixo */ }
+  }
+  usingLocalTheme = true;
 }
 function getThemeFormValues(){
   const values = {};
@@ -1024,6 +1065,7 @@ document.getElementById('form-theme').addEventListener('submit', ev => {
   const values = getThemeFormValues();
   applyThemeValues(values);
   saveCustomTheme(values);
+  saveCustomThemeRemote(values);
   themeModalBaseline = values;
   closeModal('modal-theme');
   showToast('Cores do tema salvas.');
@@ -2025,6 +2067,7 @@ async function boot(){
   initStorage();
   initPaidStorage();
   initClosedStorage();
+  initThemeStorage();
   renderAll();
 }
 
