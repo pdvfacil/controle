@@ -308,6 +308,12 @@
   table.tx td.cell-month{order:3; flex:0 0 auto; font-size:.72rem; color:var(--ink-muted);}
   table.tx td.tag-cat{order:3; flex:0 0 auto;}
   table.tx td.cell-month::after{content:" ·"; margin-inline-end:6px;}
+  /* Nas Despesas o mês some quando um mês específico já está selecionado no
+     filtro lá em cima (ver JS) -- com :empty escondemos a célula inteira
+     (e o "·" que viria junto) em vez de deixar um separador solto. Só
+     aparece de novo na visão "Ano inteiro", onde o mês de cada lançamento
+     volta a fazer diferença. */
+  table.tx td.cell-month:empty{display:none;}
   table.tx td.cell-due{order:3; flex:0 0 auto; font-size:.72rem; color:var(--ink-muted);}
   table.tx td.cell-due:empty{display:none;}
   table.tx td.amt{order:2; flex:0 0 auto; text-align:left; padding-block:2px 2px;}
@@ -319,10 +325,12 @@
      selo. */
   table.tx td.cell-actions{order:2; flex:0 0 auto;}
   table.tx td.cell-actions .row-actions{justify-content:flex-end;}
-  /* Nas Receitas (sem selo de status) os ícones voltam a ficar depois do
-     mês -- junto do valor eles ficavam espremidos no meio da linha, entre o
-     valor e "Out/26". */
-  .tx-card-income table.tx td.cell-actions{order:4;}
+  /* Nas Receitas (sem selo de status) os ícones voltam a ficar como estavam
+     antes: depois do mês, encostados na borda direita do cartão. Sem o
+     margin-inline-start:auto aqui eles ficavam logo depois de "Out/26",
+     tudo espremido -- por isso restauro a margem automática só pra essa
+     tabela (nas Despesas quem empurra pro canto é o selo de status). */
+  .tx-card-income table.tx td.cell-actions{order:4; margin-inline-start:auto;}
   /* Força quebra de linha entre os grupos (valor+status / mês+categoria+
      vencimento / ações), senão o navegador deixa esses pedaços "subirem"
      pra linha de cima quando sobra espaço, e o selo Pago/A pagar acaba em
@@ -1566,10 +1574,10 @@ function renderExpenseTable(){
       : `<label class="paid-toggle ${paid ? 'is-paid' : ''}"><input type="checkbox" data-paid-toggle="${r.id}" ${paid ? 'checked' : ''}>${paid ? '✓ Pago' : 'A pagar'}</label>`;
     return `
     <tr>
-      <td class="cell-month">${MONTH_ABBR[r.month-1]}/${String(r.year).slice(2)}</td>
+      <td class="cell-month">${selectedMonth ? '' : `${MONTH_ABBR[r.month-1]}/${String(r.year).slice(2)}`}</td>
       <td class="tx-desc" title="${escapeHtml(r.desc)}">${escapeHtml(r.desc)}</td>
       <td class="tag-cat" title="${r.category ? escapeHtml(r.category) : ''}">${r.category ? escapeHtml(r.category) : '—'}</td>
-      <td class="cell-due">${r.dueDate ? formatDueDate(r.dueDate) : ''}</td>
+      <td class="cell-due">${r.dueDate ? `Vencimento: ${formatDueDate(r.dueDate)}` : ''}</td>
       <td class="row-break row-break-meta" aria-hidden="true"></td>
       <td class="amt num despesa ${paid ? 'is-paid' : ''}">- ${BRL2.format(r.value)}</td>
       <td class="cell-status">${statusCell}</td>
