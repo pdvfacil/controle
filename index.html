@@ -1187,7 +1187,7 @@ async function runInitialMonthsCloseMigration(){
   const targets = [];
   allYears().forEach(y => {
     for (let m = 1; m <= 12; m++){
-      if (y > curY || (y === curY && m > curM)) continue; // não mexe no mês que está entrando nem no futuro
+      if (y > curY || (y === curY && m >= curM)) continue; // não mexe no mês atual (fica aberto p/ marcar manualmente) nem no futuro
       if (hasExpenseData(y, m)) targets.push({ y, m });
     }
   });
