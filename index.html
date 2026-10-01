@@ -58,12 +58,16 @@
        respiro nenhum no topo -- assim garante uma folga mesmo nesse caso */
     padding-top:max(10px, env(safe-area-inset-top,0px));
     padding-bottom:env(safe-area-inset-bottom,0px);
-    /* trava a página pra nunca deslizar pro lado (impede o "rubber-band"
-       horizontal do Safari no celular, que fazia a tela parecer se mover
-       e descentralizar o conteúdo) */
+    /* trava a página pra nunca deslizar pro lado. overflow-x:hidden sozinho
+       não é suficiente no Safari do iPhone -- o "rubber-band"/bounce lateral
+       ao arrastar com o dedo ignora isso. touch-action:pan-y é o que
+       realmente bloqueia o arrasto horizontal por toque, permitindo só o
+       scroll vertical normal da página. */
     overflow-x:hidden;
     overscroll-behavior-x:none;
+    touch-action:pan-y;
     width:100%;
+    max-width:100%;
   }
   body{
     background:var(--bg); color:var(--ink);
@@ -71,7 +75,9 @@
     padding-inline:0; margin:0;
     overflow-x:hidden;
     overscroll-behavior-x:none;
+    touch-action:pan-y;
     width:100%;
+    max-width:100%;
     position:relative;
   }
   .wrap{max-width:1080px; margin:0 auto; padding-inline:20px;}
