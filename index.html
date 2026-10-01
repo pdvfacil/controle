@@ -80,11 +80,10 @@
     max-width:100%;
     position:relative;
   }
-  /* 1320px (em vez de 1080px): no notebook/desktop sobrava muita área azul
-     vazia nas laterais, e os cartões de Despesas/Receitas ficavam mais
-     estreitos que a tabela interna (que precisa de pelo menos 560px),
-     forçando rolagem lateral dentro do cartão pra ver a coluna de valor. */
-  .wrap{max-width:1320px; margin:0 auto; padding-inline:20px;}
+  /* 1180px: com a tabela usando largura fixa por coluna (ver mais abaixo)
+     não precisa mais de 1320px pra caber a coluna de valor -- reduzindo
+     ainda mais sobra menos área azul vazia nas laterais em notebook/desktop. */
+  .wrap{max-width:1180px; margin:0 auto; padding-inline:20px;}
   h1,h2,h3{font-family:"Fraunces", Georgia, serif; font-weight:600; text-wrap:balance; margin:0;}
   .num{font-family:"IBM Plex Mono", "IBM Plex Sans", monospace; font-variant-numeric:tabular-nums;}
   a{color:inherit;}
@@ -307,12 +306,16 @@
     table.tx td.tx-desc, table.tx td.tag-cat{overflow:hidden; text-overflow:ellipsis;}
 
     .tx-card-expense table.tx .cell-month{width:12%;}
-    .tx-card-expense table.tx .tx-desc{width:14%;}
-    .tx-card-expense table.tx .tag-cat{width:8%;}
-    .tx-card-expense table.tx .cell-due{width:11%;}
+    .tx-card-expense table.tx .tx-desc{width:19%;}
+    .tx-card-expense table.tx .tag-cat{width:12%;}
+    .tx-card-expense table.tx .cell-due{width:10%;}
     .tx-card-expense table.tx .amt{width:20%;}
-    .tx-card-expense table.tx .cell-status{width:18%;}
-    .tx-card-expense table.tx .cell-actions{width:17%;}
+    /* Reduzida e alinhada à direita (encostando perto do lápis de edição)
+       em vez de ocupar uma coluna larga com o selo "Pago"/"A pagar" solto
+       no canto esquerdo -- isso fechava o espaço vazio entre o selo e os
+       ícones de editar/excluir. */
+    .tx-card-expense table.tx .cell-status{width:13%; text-align:right;}
+    .tx-card-expense table.tx .cell-actions{width:14%;}
 
     .tx-card-income table.tx .cell-month{width:13%;}
     .tx-card-income table.tx .tx-desc{width:46%;}
