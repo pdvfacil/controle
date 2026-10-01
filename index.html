@@ -312,8 +312,17 @@
   table.tx td.cell-due:empty{display:none;}
   table.tx td.amt{order:2; flex:0 0 auto; text-align:left; padding-block:2px 2px;}
   table.tx td.cell-status{order:2; flex:0 0 auto; margin-inline-start:auto;}
-  table.tx td.cell-actions{order:4; flex:0 0 auto; margin-inline-start:auto;}
+  /* order:2 (mesmo grupo do valor/status) em vez de 4 -- fica na mesma linha
+     do selo Pago/A pagar, logo depois dele (o espaçamento entre os dois vem
+     do gap padrão do cartão, não precisa de margem própria), deixando o
+     lançamento mais compacto (uma linha a menos) sem grudar os ícones no
+     selo. */
+  table.tx td.cell-actions{order:2; flex:0 0 auto;}
   table.tx td.cell-actions .row-actions{justify-content:flex-end;}
+  /* Nas Receitas (sem selo de status) os ícones voltam a ficar depois do
+     mês -- junto do valor eles ficavam espremidos no meio da linha, entre o
+     valor e "Out/26". */
+  .tx-card-income table.tx td.cell-actions{order:4;}
   /* Força quebra de linha entre os grupos (valor+status / mês+categoria+
      vencimento / ações), senão o navegador deixa esses pedaços "subirem"
      pra linha de cima quando sobra espaço, e o selo Pago/A pagar acaba em
@@ -1564,8 +1573,8 @@ function renderExpenseTable(){
       <td class="row-break row-break-meta" aria-hidden="true"></td>
       <td class="amt num despesa ${paid ? 'is-paid' : ''}">- ${BRL2.format(r.value)}</td>
       <td class="cell-status">${statusCell}</td>
-      <td class="row-break row-break-status" aria-hidden="true"></td>
       <td class="cell-actions">${r.manual ? `<span class="row-actions"><button class="edit-btn" data-edit-exp="${r.id}" title="Editar despesa" aria-label="Editar despesa">✎</button><button class="del-btn" data-del="${r.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span>` : ''}</td>
+      <td class="row-break row-break-status" aria-hidden="true"></td>
     </tr>
   `;
   }).join('');
