@@ -1158,13 +1158,11 @@ async function pruneRunawayFutureEntries(){
 }
 
 function maybeAutoSeed(){
+  /* O próximo mês só é gerado quando o mês atual é encerrado de fato
+     (botão "Enviar e encerrar mês", que chama closeMonth -> autoSeedFromMonth).
+     Antes disso, geração automática por data do sistema deixou o mês seguinte
+     aparecer mesmo sem o mês atual ter sido fechado — por isso foi removida daqui. */
   pruneRunawayFutureEntries()
-    .then(() => {
-      if (!autoSeedDone){
-        autoSeedDone = true;
-        autoSeedNextMonthExpenses().catch(e => console.warn('auto-seed falhou', e));
-      }
-    })
     .catch(e => console.warn('limpeza de lançamentos futuros falhou', e));
   runInitialMonthsCloseMigration().catch(e => console.warn('fechamento de meses falhou', e));
 }
