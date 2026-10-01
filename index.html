@@ -401,6 +401,7 @@
         <h2><span class="dot" style="background:var(--income)"></span>Receitas</h2>
         <span class="hint" id="inc-hint"></span>
       </div>
+      <div class="paid-summary" id="cash-summary"></div>
       <input class="search" id="inc-search" type="search" placeholder="Buscar receita…" aria-label="Buscar receita">
       <div class="tx-table-wrap">
         <table class="tx">
@@ -1397,6 +1398,8 @@ function periodLabelText(){
   return selectedMonth ? `${MONTH_FULL[selectedMonth-1]}/${selectedYear}` : `${selectedYear}`;
 }
 
+let lastExpensePaidTotal = 0; // total já pago das despesas do período em exibição (usado no saldo em caixa)
+
 function renderExpenseTable(){
   let rows = allTxForYear(selectedYear).filter(r => r.type === 'despesa');
   if (selectedMonth) rows = rows.filter(r => r.month === selectedMonth);
@@ -1418,6 +1421,7 @@ function renderExpenseTable(){
 
   const paidTotal = rows.filter(r => isPaid(r.id)).reduce((a,r) => a+r.value, 0);
   const pendingTotal = total - paidTotal;
+  lastExpensePaidTotal = paidTotal;
   const summaryEl = document.getElementById('paid-summary');
   if (summaryEl){
     let closeBar = '';
@@ -1492,6 +1496,21 @@ function renderIncomeTable(){
   }
   const total = rows.reduce((a,r) => a+r.value, 0);
   document.getElementById('inc-hint').textContent = `${rows.length} · ${BRL.format(total)} em ${periodLabelText()}`;
+
+  const cashBalance = total - lastExpensePaidTotal;
+  const cashEl = document.getElementById('cash-summary');
+  if (cashEl){
+    cashEl.innerHTML = `
+      <div class="paid-stat is-paid">
+        <span class="paid-stat-label">Total recebido</span>
+        <span class="paid-stat-value num">${BRL.format(total)}</span>
+      </div>
+      <div class="paid-stat ${cashBalance >= 0 ? 'is-paid' : 'is-pending'}">
+        <span class="paid-stat-label">Saldo em caixa</span>
+        <span class="paid-stat-value num">${BRL.format(cashBalance)}</span>
+      </div>
+    `;
+  }
 
   const body = document.getElementById('inc-body');
   if (!rows.length){
