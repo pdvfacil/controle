@@ -141,7 +141,12 @@
 
   /* ---------- KPI grid ---------- */
   .kpis{display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-block-end:20px;}
-  @media (max-width:760px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+  /* minmax(0, 1fr) em vez de só "1fr": garante que a coluna do grid tenha
+     tamanho mínimo zero de verdade. Só "1fr" deixa a coluna crescer pelo
+     conteúdo em alguns navegadores (Safari/iOS incluso) mesmo com
+     min-width:0 no item -- foi isso que fazia os cards de KPI passarem
+     um pouco da tela no celular. */
+  @media (max-width:760px){ .kpis{grid-template-columns:repeat(2, minmax(0, 1fr));} }
   .kpi{
     background:var(--surface); border:1px solid var(--border); border-radius:18px;
     padding:16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;
