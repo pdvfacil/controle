@@ -360,6 +360,33 @@
   #auth-gate[hidden]{display:none!important;}
 
   [hidden]{display:none!important;}
+
+  /* ---------- Modo compacto (celular) ----------
+     Reduz fontes/espaçamentos no celular pra caber mais conteúdo na tela
+     de uma vez, sem precisar ficar rolando tanto (o layout "grande demais"
+     dava a sensação de estar tudo com zoom/cortado). */
+  @media (max-width:480px){
+    .wrap{padding-inline:14px;}
+    .top-inner{padding-block:10px; gap:10px;}
+    .brand{gap:0;}
+    .brand h1{font-size:1.15rem;}
+    .brand p{font-size:.7rem;}
+    .top-actions{gap:6px;}
+    .btn{padding:8px 13px; font-size:.78rem; gap:5px; border-radius:8px;}
+    .filters{padding-block:9px 2px; gap:6px;}
+    .pill-select select{padding:6px 28px 6px 12px; font-size:.78rem;}
+    main{padding-block:14px 48px;}
+    .kpis{gap:8px; margin-block-end:14px;}
+    .kpi{padding:11px; gap:3px; border-radius:14px;}
+    .kpi .label{font-size:.64rem;}
+    .kpi .value{font-size:1.15rem;}
+    .kpi .sub{font-size:.68rem;}
+    .card{padding:14px; border-radius:16px; margin-block-end:12px;}
+    .card-head{margin-block-end:10px;}
+    .card-head h2{font-size:.94rem;}
+    .card-head .hint{font-size:.7rem;}
+    .paid-summary .paid-stat .paid-stat-value{font-size:1rem;}
+  }
 </style>
 </head>
 <body>
