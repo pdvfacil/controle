@@ -367,6 +367,22 @@
   .modal-actions{display:flex; gap:10px; margin-block-start:8px;}
   .modal-actions .btn{flex:1; justify-content:center;}
 
+  /* ---------- Modal: personalização de cores do tema ---------- */
+  .theme-link-btn{width:100%; justify-content:center; margin-block-end:16px;}
+  .modal-theme{max-width:560px;}
+  .theme-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:18px 24px; margin-block-end:8px;}
+  .theme-group h4{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); margin:0 0 8px;}
+  .color-field{display:flex; align-items:center; justify-content:space-between; gap:12px; padding-block:5px;}
+  .color-field label{font-size:.84rem; color:var(--ink-2);}
+  .color-field input[type="color"]{
+    -webkit-appearance:none; appearance:none; width:42px; height:30px; padding:0;
+    border:1px solid var(--border); border-radius:8px; background:none; cursor:pointer; flex:0 0 auto;
+  }
+  .color-field input[type="color"]::-webkit-color-swatch-wrapper{padding:2px;}
+  .color-field input[type="color"]::-webkit-color-swatch{border:none; border-radius:6px;}
+  .color-field input[type="color"]::-moz-color-swatch{border:none; border-radius:6px;}
+  .modal-theme .modal-actions{flex-wrap:wrap;}
+
   #toast{
     position:fixed; bottom:calc(20px + env(safe-area-inset-bottom,0px)); left:50%;
     transform:translateX(-50%) translateY(20px); background:var(--pop-bg); color:var(--pop-ink);
@@ -614,6 +630,7 @@
   <form class="modal" id="form-settings">
     <h3>Configurações de acesso</h3>
     <p class="modal-sub">Jaylson e Camila são administradores e podem trocar a senha de qualquer um dos dois.</p>
+    <button type="button" class="btn btn-ghost theme-link-btn" id="btn-open-theme">🎨 Personalizar cores do tema</button>
     <div class="field">
       <label for="settings-user">Usuário</label>
       <select id="settings-user"></select>
@@ -630,6 +647,46 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" data-close="modal-settings">Cancelar</button>
       <button type="submit" class="btn btn-income">Salvar senha</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: personalização de cores do tema -->
+<div class="modal-backdrop" id="modal-theme" hidden>
+  <form class="modal modal-theme" id="form-theme">
+    <h3>Cores do tema</h3>
+    <p class="modal-sub">Mude cada cor individualmente. A pré-visualização é na hora; clique em "Salvar cores" pra manter.</p>
+
+    <div class="theme-grid">
+      <div class="theme-group">
+        <h4>Fundo</h4>
+        <div class="color-field"><label for="theme-bg">Fundo do topo</label><input type="color" id="theme-bg"></div>
+        <div class="color-field"><label for="theme-surface">Fundo dos cartões</label><input type="color" id="theme-surface"></div>
+        <div class="color-field"><label for="theme-surface2">Fundo secundário</label><input type="color" id="theme-surface2"></div>
+        <div class="color-field"><label for="theme-border">Bordas</label><input type="color" id="theme-border"></div>
+      </div>
+      <div class="theme-group">
+        <h4>Letras</h4>
+        <div class="color-field"><label for="theme-ink">Texto principal</label><input type="color" id="theme-ink"></div>
+        <div class="color-field"><label for="theme-ink2">Texto secundário</label><input type="color" id="theme-ink2"></div>
+        <div class="color-field"><label for="theme-ink-muted">Texto esmaecido</label><input type="color" id="theme-ink-muted"></div>
+      </div>
+      <div class="theme-group">
+        <h4>Sombra</h4>
+        <div class="color-field"><label for="theme-shadow">Cor da sombra</label><input type="color" id="theme-shadow"></div>
+      </div>
+      <div class="theme-group">
+        <h4>Destaques</h4>
+        <div class="color-field"><label for="theme-accent">Cor de destaque</label><input type="color" id="theme-accent"></div>
+        <div class="color-field"><label for="theme-income">Verde (receitas)</label><input type="color" id="theme-income"></div>
+        <div class="color-field"><label for="theme-expense">Vermelho (despesas)</label><input type="color" id="theme-expense"></div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="btn-theme-reset">Restaurar padrão</button>
+      <button type="button" class="btn btn-ghost" id="btn-theme-cancel">Cancelar</button>
+      <button type="submit" class="btn btn-income">Salvar cores</button>
     </div>
   </form>
 </div>
@@ -846,6 +903,130 @@ document.getElementById('form-settings').addEventListener('submit', async ev => 
   closeModal('modal-settings');
   const who = findUser(username);
   showToast(`Senha de ${who ? who.name : username} atualizada.`);
+});
+
+/* ============ Personalização de cores do tema ============ */
+const THEME_KEY = 'livrocaixa_theme_v1';
+const THEME_FIELDS = [
+  {key:'bg', varName:'--bg', id:'theme-bg'},
+  {key:'surface', varName:'--surface', id:'theme-surface'},
+  {key:'surface2', varName:'--surface-2', id:'theme-surface2'},
+  {key:'border', varName:'--border', id:'theme-border'},
+  {key:'ink', varName:'--ink', id:'theme-ink'},
+  {key:'ink2', varName:'--ink-2', id:'theme-ink2'},
+  {key:'inkMuted', varName:'--ink-muted', id:'theme-ink-muted'},
+  {key:'accent', varName:'--accent', id:'theme-accent'},
+  {key:'income', varName:'--income', id:'theme-income'},
+  {key:'expense', varName:'--expense', id:'theme-expense'},
+];
+const THEME_SHADOW_ID = 'theme-shadow';
+const THEME_DEFAULTS = {
+  bg:'#1b3fe0', surface:'#ffffff', surface2:'#eef1fb', border:'#e1e6f6',
+  ink:'#151f45', ink2:'#47517a', inkMuted:'#171717',
+  accent:'#3cb043', income:'#3cb043', expense:'#e53935',
+  shadow:'#0a1450',
+};
+let themeModalBaseline = null; // valores salvos quando o modal foi aberto, pra "Cancelar" poder reverter a pré-visualização
+
+function hexToRgbTriplet(hex){
+  const m = (hex || '').replace('#','');
+  if (m.length !== 6) return '10, 20, 80';
+  const r = parseInt(m.substring(0,2),16);
+  const g = parseInt(m.substring(2,4),16);
+  const b = parseInt(m.substring(4,6),16);
+  return `${r}, ${g}, ${b}`;
+}
+// Em vez de reescrever a variável --shadow nos três blocos de :root (claro, escuro
+// automático e data-theme), monta aqui o box-shadow completo já com a cor
+// escolhida e sobrescreve --shadow direto via style inline -- que sempre vence
+// qualquer regra de :root/media query, então funciona independente do tema atual.
+function buildShadowValue(hex){
+  const rgb = hexToRgbTriplet(hex);
+  return `0 4px 12px rgba(${rgb},.18), 0 22px 46px -22px rgba(${rgb},.55)`;
+}
+function applyThemeValues(values){
+  if (!values) return;
+  const root = document.documentElement.style;
+  THEME_FIELDS.forEach(f => { if (values[f.key]) root.setProperty(f.varName, values[f.key]); });
+  if (values.shadow) root.setProperty('--shadow', buildShadowValue(values.shadow));
+}
+// Remove os overrides inline, deixando as variáveis voltarem a vir do :root
+// normal (respeitando claro/escuro automático do sistema) -- usado no Cancelar
+// quando o usuário nunca tinha salvo uma personalização antes.
+function clearThemeOverrides(){
+  const root = document.documentElement.style;
+  THEME_FIELDS.forEach(f => root.removeProperty(f.varName));
+  root.removeProperty('--shadow');
+}
+function loadCustomTheme(){
+  try{
+    const raw = localStorage.getItem(THEME_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function saveCustomTheme(values){
+  try{ localStorage.setItem(THEME_KEY, JSON.stringify(values)); }catch(e){}
+}
+function getThemeFormValues(){
+  const values = {};
+  THEME_FIELDS.forEach(f => { values[f.key] = document.getElementById(f.id).value; });
+  values.shadow = document.getElementById(THEME_SHADOW_ID).value;
+  return values;
+}
+function fillThemeForm(values){
+  THEME_FIELDS.forEach(f => { document.getElementById(f.id).value = values[f.key] || THEME_DEFAULTS[f.key]; });
+  document.getElementById(THEME_SHADOW_ID).value = values.shadow || THEME_DEFAULTS.shadow;
+}
+// Pra preencher o formulário quando o usuário nunca personalizou nada, lê o
+// valor computado de cada variável (funciona tanto no tema claro quanto no
+// escuro automático, já que ambos definem essas variáveis como cor hexadecimal
+// simples). A sombra é um box-shadow composto, não dá pra "inverter" -- usa um
+// tom aproximado conforme o tema atual.
+function getInitialThemeFormValues(){
+  const cs = getComputedStyle(document.documentElement);
+  const values = {};
+  THEME_FIELDS.forEach(f => {
+    const v = cs.getPropertyValue(f.varName).trim();
+    values[f.key] = v || THEME_DEFAULTS[f.key];
+  });
+  const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  values.shadow = isDark ? '#000000' : THEME_DEFAULTS.shadow;
+  return values;
+}
+
+(function initCustomTheme(){
+  const saved = loadCustomTheme();
+  if (saved) applyThemeValues(saved);
+})();
+
+document.getElementById('btn-open-theme').addEventListener('click', () => {
+  closeModal('modal-settings');
+  themeModalBaseline = loadCustomTheme();
+  fillThemeForm(themeModalBaseline || getInitialThemeFormValues());
+  openModal('modal-theme');
+});
+
+const previewTheme = () => applyThemeValues(getThemeFormValues());
+THEME_FIELDS.forEach(f => document.getElementById(f.id).addEventListener('input', previewTheme));
+document.getElementById(THEME_SHADOW_ID).addEventListener('input', previewTheme);
+
+document.getElementById('btn-theme-reset').addEventListener('click', () => {
+  fillThemeForm(THEME_DEFAULTS);
+  applyThemeValues(THEME_DEFAULTS);
+});
+
+document.getElementById('btn-theme-cancel').addEventListener('click', () => {
+  closeModal('modal-theme'); // closeModal já desfaz a pré-visualização não salva
+});
+
+document.getElementById('form-theme').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const values = getThemeFormValues();
+  applyThemeValues(values);
+  saveCustomTheme(values);
+  themeModalBaseline = values;
+  closeModal('modal-theme');
+  showToast('Cores do tema salvas.');
 });
 
 /* ============ Estado ============ */
@@ -1693,6 +1874,16 @@ function closeModal(id){
   document.body.style.overflow = '';
   if (id === 'modal-expense') editingExpenseId = null;
   if (id === 'modal-income') editingIncomeId = null;
+  // Fechar o modal de cores por qualquer caminho (clique fora, Esc, botão
+  // Cancelar) sem ter salvo deve desfazer a pré-visualização ao vivo --
+  // senão uma cor só "testada" ficaria aplicada mesmo sem o usuário ter
+  // clicado em "Salvar cores".
+  if (id === 'modal-theme'){
+    if (typeof themeModalBaseline !== 'undefined'){
+      if (themeModalBaseline) applyThemeValues(themeModalBaseline);
+      else clearThemeOverrides();
+    }
+  }
 }
 
 function setExpenseModalMode(editing){
