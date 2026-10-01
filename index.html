@@ -202,7 +202,12 @@
      isso a coluna do grid cresce pelo conteúdo mínimo da tabela interna (que
      não quebra linha) em vez de respeitar o espaço disponível, empurrando o
      cartão pra fora e forçando rolagem lateral. */
-  .tx-row{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px;}
+  /* margin-block-end:20px -- os cartões de Despesas/Receitas (.tx-card) zeram
+     sua própria margem inferior (pra não dobrar o espaçamento um do lado do
+     outro, já que o "gap" do grid cuida disso entre eles), mas isso também
+     zerava o espaço DEPOIS da linha inteira, colando esse bloco direto nos
+     gráficos logo abaixo. A margem tem que ficar aqui, no contêiner do grid. */
+  .tx-row{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px; margin-block-end:20px;}
   /* 1100px (em vez de 820px): logo acima de 820 os dois cartões ficavam com
      ~330px cada -- estreito demais pra tabela de 7 colunas (Despesas) não
      truncar os valores. Empilhando até 1100px garante que, quando os dois
@@ -431,6 +436,7 @@
     .pill-select select{padding:6px 28px 6px 12px; font-size:.78rem;}
     main{padding-block:14px 48px;}
     .kpis{gap:8px; margin-block-end:14px;}
+    .tx-row{gap:12px; margin-block-end:14px;}
     .kpi{padding:11px; gap:3px; border-radius:14px;}
     .kpi .label{font-size:.64rem;}
     .kpi .value{font-size:1.15rem;}
