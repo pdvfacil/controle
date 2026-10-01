@@ -53,13 +53,26 @@
     /* evita que o título/cabeçalho fique colado ou escondido atrás da barra de
        status / notch do celular (a página pede viewport-fit=cover, então tem
        que empurrar o conteúdo pra baixo dessa área por conta própria) */
-    padding-top:env(safe-area-inset-top,0px);
+    /* usa max() com um valor mínimo porque em algumas situações (aba normal do
+       Safari, sem viewport-fit=cover reconhecido) o env() volta 0 e não cria
+       respiro nenhum no topo -- assim garante uma folga mesmo nesse caso */
+    padding-top:max(10px, env(safe-area-inset-top,0px));
     padding-bottom:env(safe-area-inset-bottom,0px);
+    /* trava a página pra nunca deslizar pro lado (impede o "rubber-band"
+       horizontal do Safari no celular, que fazia a tela parecer se mover
+       e descentralizar o conteúdo) */
+    overflow-x:hidden;
+    overscroll-behavior-x:none;
+    width:100%;
   }
   body{
     background:var(--bg); color:var(--ink);
     font-family:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
     padding-inline:0; margin:0;
+    overflow-x:hidden;
+    overscroll-behavior-x:none;
+    width:100%;
+    position:relative;
   }
   .wrap{max-width:1080px; margin:0 auto; padding-inline:20px;}
   h1,h2,h3{font-family:"Fraunces", Georgia, serif; font-weight:600; text-wrap:balance; margin:0;}
