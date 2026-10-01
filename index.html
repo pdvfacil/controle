@@ -124,6 +124,8 @@
   .card{
     background:var(--surface); border:1px solid var(--border); border-radius:20px;
     padding:20px; box-shadow:var(--shadow); margin-block-end:16px;
+    min-width:0; /* evita que o card force a linha do grid a crescer além do espaço disponível
+                    (sem isso, a tabela de despesas/receitas "empurrava" a página pro lado) */
   }
   .card-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-block-end:14px; flex-wrap:wrap;}
   .card-head h2{font-size:1.05rem;}
