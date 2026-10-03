@@ -637,6 +637,8 @@
     <h3>Configurações de acesso</h3>
     <p class="modal-sub">Jaylson e Camila são administradores e podem trocar a senha de qualquer um dos dois.</p>
     <button type="button" class="btn btn-ghost theme-link-btn" id="btn-open-theme">🎨 Personalizar cores do tema</button>
+    <button type="button" class="btn btn-ghost theme-link-btn" id="btn-push-toggle">🔔 Ativar notificações neste aparelho</button>
+    <p class="modal-sub" id="push-status" style="margin-top:-10px;"></p>
     <div class="field">
       <label for="settings-user">Usuário</label>
       <select id="settings-user"></select>
@@ -1089,6 +1091,145 @@ document.getElementById('form-theme').addEventListener('submit', ev => {
   showToast('Cores do tema salvas.');
 });
 
+/* ============ Notificações push (um aviso no celular a cada lançamento) ============
+   Como funciona: cada aparelho que ativa a notificação salva uma "inscrição"
+   de push (gerada pelo próprio navegador) no Firestore. Quando alguém lança
+   uma despesa/receita ou muda o status de pago, o aparelho que fez a mudança
+   chama um Worker da Cloudflare (gratuito) passando as inscrições de TODOS OS
+   OUTROS aparelhos (nunca a própria, pra não notificar quem acabou de fazer a
+   ação) + a mensagem. O Worker criptografa e entrega pro serviço de push de
+   cada navegador (Chrome/Firefox/Safari). Sem isso (Worker ainda não
+   publicado), o botão funciona mas o envio simplesmente falha silenciosamente
+   — não quebra o resto do app. */
+const VAPID_PUBLIC_KEY = 'BFzq_evd-ubQztiRuIlRVeKCmZeAyxP6kaBV5Fzo735pf0zPFJWozypsSHtiRm6b9yXFx_Qr4AzZu5I3ifK5WPo';
+/* Depois de publicar o Worker na Cloudflare, troque a linha abaixo pela URL
+   real (algo como "https://livro-caixa-push.SEUNOME.workers.dev"). */
+const PUSH_WORKER_URL = 'https://COLOQUE-AQUI-A-URL-DO-WORKER.workers.dev';
+const PUSH_SHARED_SECRET = '6dkkshrck3g0tYfUY3hR9vRfXzv3ZZ4x';
+const PUSH_DEVICE_ID_KEY = 'livrocaixa_device_id';
+
+let pushSubs = []; // [{id, endpoint, keys, deviceId, userName}] de TODOS os aparelhos inscritos
+
+function getOrCreateDeviceId(){
+  try{
+    let id = localStorage.getItem(PUSH_DEVICE_ID_KEY);
+    if (!id){ id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()); localStorage.setItem(PUSH_DEVICE_ID_KEY, id); }
+    return id;
+  }catch(e){ return 'device-' + Date.now(); }
+}
+function isPushSupported(){
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+function urlBase64ToUint8Array(base64url){
+  const padding = '='.repeat((4 - base64url.length % 4) % 4);
+  const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+function initPushSubsStorage(){
+  if (db && !usingLocal){
+    try{
+      db.collection('livro_caixa_push_subs').onSnapshot(
+        snap => { pushSubs = snap.docs.map(d => ({ id: d.id, ...d.data() })); },
+        err => { console.warn('push subs snapshot error', err); pushSubs = []; }
+      );
+    }catch(e){ /* sem sincronização de push; o recurso fica indisponível */ }
+  }
+}
+async function updatePushButtonUI(){
+  const btn = document.getElementById('btn-push-toggle');
+  const status = document.getElementById('push-status');
+  if (!btn || !status) return;
+  if (!isPushSupported()){
+    btn.textContent = '🔔 Notificações não suportadas neste navegador';
+    btn.disabled = true;
+    status.textContent = 'No iPhone: abra pelo Safari e toque em "Adicionar à Tela de Início" primeiro.';
+    return;
+  }
+  try{
+    const reg = await navigator.serviceWorker.getRegistration('./');
+    const sub = reg ? await reg.pushManager.getSubscription() : null;
+    if (sub){
+      btn.textContent = '🔕 Desativar notificações neste aparelho';
+      status.textContent = 'Notificações ativadas neste aparelho.';
+    } else {
+      btn.textContent = '🔔 Ativar notificações neste aparelho';
+      status.textContent = '';
+    }
+  }catch(e){
+    btn.textContent = '🔔 Ativar notificações neste aparelho';
+    status.textContent = '';
+  }
+}
+async function togglePushOnThisDevice(){
+  if (!isPushSupported()) return;
+  const status = document.getElementById('push-status');
+  try{
+    const reg = await navigator.serviceWorker.register('./service-worker.js');
+    const existing = await reg.pushManager.getSubscription();
+    if (existing){
+      const deviceId = getOrCreateDeviceId();
+      await existing.unsubscribe();
+      if (db && !usingLocal){ try{ await db.collection('livro_caixa_push_subs').doc(deviceId).delete(); }catch(e){} }
+      showToast('Notificações desativadas neste aparelho.');
+      await updatePushButtonUI();
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted'){
+      status.textContent = 'Permissão negada. Pra ativar depois, mude isso nas configurações de notificação do navegador pra este site.';
+      return;
+    }
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    const deviceId = getOrCreateDeviceId();
+    const raw = sub.toJSON();
+    const who = findUser(currentUser);
+    if (db && !usingLocal){
+      await db.collection('livro_caixa_push_subs').doc(deviceId).set({
+        endpoint: raw.endpoint,
+        keys: raw.keys,
+        deviceId,
+        userName: who ? who.name : (currentUser || ''),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    showToast('Notificações ativadas neste aparelho.');
+    await updatePushButtonUI();
+  }catch(e){
+    console.warn('push toggle failed', e);
+    status.textContent = 'Não deu pra ativar agora. Tente de novo em alguns segundos.';
+  }
+}
+document.getElementById('btn-push-toggle').addEventListener('click', togglePushOnThisDevice);
+document.getElementById('btn-settings')?.addEventListener('click', updatePushButtonUI);
+
+/* Manda um push pra todo mundo QUE NÃO SEJA este aparelho. Falha em silêncio
+   (sem Worker publicado, ou sem internet, o app continua funcionando normal —
+   isso é só um aviso extra, nunca pode travar o lançamento de despesa/receita). */
+async function notifyOthers(title, body){
+  try{
+    if (!PUSH_WORKER_URL || PUSH_WORKER_URL.includes('COLOQUE-AQUI')) return;
+    const myDeviceId = getOrCreateDeviceId();
+    const targets = pushSubs.filter(s => s.deviceId !== myDeviceId && s.endpoint && s.keys);
+    if (targets.length === 0) return;
+    const res = await fetch(PUSH_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Shared-Secret': PUSH_SHARED_SECRET },
+      body: JSON.stringify({ subscriptions: targets.map(s => ({ endpoint: s.endpoint, keys: s.keys })), title, body }),
+    });
+    if (res.ok){
+      const data = await res.json();
+      (data.results || []).forEach((r, i) => {
+        if (r.expired && targets[i] && db && !usingLocal){
+          db.collection('livro_caixa_push_subs').doc(targets[i].id).delete().catch(() => {});
+        }
+      });
+    }
+  }catch(e){ console.warn('notifyOthers failed (ignorado)', e); }
+}
+
 /* ============ Estado ============ */
 let entries = []; // lançamentos manuais {id,type,desc,value,category,date}
 let db = null;
@@ -1241,8 +1382,14 @@ async function setPaid(id, value){
 }
 
 async function togglePaid(id){
-  await setPaid(id, !isPaid(id));
+  const newValue = !isPaid(id);
+  await setPaid(id, newValue);
   renderAll();
+  const entry = entries.find(e => String(e.id) === String(id));
+  const whoName = (findUser(currentUser) || {}).name || currentUser || 'Alguém';
+  if (entry){
+    notifyOthers('Livro de Caixa', `${whoName} marcou "${entry.desc}" como ${newValue ? 'pago' : 'a pagar'}.`);
+  }
 }
 
 /* ============ Meses encerrados (fecha o mês, trava a edição de status) ============ */
@@ -2032,12 +2179,15 @@ document.getElementById('form-expense').addEventListener('submit', async ev => {
   const date = document.getElementById('exp-date').value;
   const dueDate = document.getElementById('exp-due').value || null;
   if (!desc || !isFinite(value) || value <= 0 || !date) return;
+  const whoName = (findUser(currentUser) || {}).name || currentUser || 'Alguém';
   if (editingExpenseId){
     await updateEntry(editingExpenseId, { desc, value, category, date, dueDate });
     showToast('Despesa atualizada.');
+    notifyOthers('Livro de Caixa', `${whoName} atualizou a despesa: ${desc} (${BRL2.format(value)})`);
   } else {
     await addEntry({ type:'despesa', desc, value, category, date, dueDate, createdAt: new Date().toISOString() });
     showToast('Despesa registrada.');
+    notifyOthers('Livro de Caixa', `${whoName} lançou uma despesa: ${desc} (${BRL2.format(value)})`);
   }
   ev.target.reset();
   closeModal('modal-expense');
@@ -2054,12 +2204,15 @@ document.getElementById('form-income').addEventListener('submit', async ev => {
   const value = parseFloat(document.getElementById('inc-value').value);
   const date = document.getElementById('inc-date').value;
   if (!desc || !isFinite(value) || value <= 0 || !date) return;
+  const whoName = (findUser(currentUser) || {}).name || currentUser || 'Alguém';
   if (editingIncomeId){
     await updateEntry(editingIncomeId, { desc, value, date });
     showToast('Receita atualizada.');
+    notifyOthers('Livro de Caixa', `${whoName} atualizou a receita: ${desc} (${BRL2.format(value)})`);
   } else {
     await addEntry({ type:'receita', desc, value, category:null, date, createdAt: new Date().toISOString() });
     showToast('Receita registrada.');
+    notifyOthers('Livro de Caixa', `${whoName} lançou uma receita: ${desc} (${BRL2.format(value)})`);
   }
   ev.target.reset();
   closeModal('modal-income');
@@ -2090,6 +2243,7 @@ async function boot(){
   initPaidStorage();
   initClosedStorage();
   initThemeStorage();
+  initPushSubsStorage();
   renderAll();
 }
 
