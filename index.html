@@ -1378,11 +1378,30 @@ async function setPaid(id, value){
   savePaidLocal(paidMap);
 }
 
+/* Data de hoje no fuso do aparelho (YYYY-MM-DD). Não usa toISOString porque
+   ele devolve a data em UTC, que à noite já é "amanhã" no Brasil. */
+function localTodayISO(){
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+
 async function togglePaid(id){
   const newValue = !isPaid(id);
   await setPaid(id, newValue);
-  renderAll();
   const entry = entries.find(e => String(e.id) === String(id));
+  /* Despesa sem vencimento cadastrado: ao confirmar o pagamento, o vencimento
+     passa a ser a data de hoje. Se o pagamento for desfeito, volta a ficar sem
+     vencimento (só quando foi o sistema que preencheu — vencimento digitado
+     pelo usuário nunca é mexido). */
+  if (entry && entry.type === 'despesa'){
+    if (newValue && !entry.dueDate){
+      await updateEntry(entry.id, { dueDate: localTodayISO(), dueAuto: true });
+    } else if (!newValue && entry.dueAuto){
+      await updateEntry(entry.id, { dueDate: null, dueAuto: false });
+    }
+  }
+  renderAll();
   const whoName = (findUser(currentUser) || {}).name || currentUser || 'Alguém';
   if (entry){
     notifyOthers('Livro de Caixa', `${whoName} marcou "${entry.desc}" como ${newValue ? 'pago' : 'a pagar'}.`);
@@ -2178,7 +2197,7 @@ document.getElementById('form-expense').addEventListener('submit', async ev => {
   if (!desc || !isFinite(value) || value <= 0 || !date) return;
   const whoName = (findUser(currentUser) || {}).name || currentUser || 'Alguém';
   if (editingExpenseId){
-    await updateEntry(editingExpenseId, { desc, value, category, date, dueDate });
+    await updateEntry(editingExpenseId, { desc, value, category, date, dueDate, dueAuto: false });
     showToast('Despesa atualizada.');
     notifyOthers('Livro de Caixa', `${whoName} atualizou a despesa: ${desc} (${BRL2.format(value)})`);
   } else {
