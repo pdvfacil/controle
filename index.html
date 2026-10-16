@@ -178,6 +178,15 @@
   .amt.invest{color:var(--invest-dark);}
   .amt.invest.is-out{color:var(--ink-2);}
   .tx-card-invest table.tx td.cell-actions{margin-inline-start:auto;}
+  /* ---------- Receitas por fonte ---------- */
+  .income-sources{margin-block-start:-4px;}
+  .income-src{gap:1px;}
+  .income-src .paid-stat-value{color:var(--ink);}
+  .income-src-pct{font-size:.7rem; color:var(--ink-muted);}
+  .income-src.src-none .paid-stat-value{color:var(--ink-2);}
+  table.tx td.income-src-tag{font-weight:600; color:var(--ink-2);}
+  table.tx td.income-src-tag.is-none{font-weight:400; font-style:italic; color:var(--ink-muted);}
+
   .invest-acct{gap:1px;}
   .invest-acct .paid-stat-value{color:var(--invest-dark);}
   .invest-acct-sub{font-size:.72rem; color:var(--ink-2);}
@@ -582,6 +591,7 @@
         <span class="hint" id="inc-hint"></span>
       </div>
       <div class="paid-summary" id="cash-summary"></div>
+      <div class="paid-summary income-sources" id="income-sources"></div>
       <input class="search" id="inc-search" type="search" placeholder="Buscar receita…" aria-label="Buscar receita">
       <div class="tx-table-wrap">
         <table class="tx">
@@ -684,6 +694,14 @@
     <div class="field">
       <label for="inc-desc">Descrição</label>
       <input id="inc-desc" type="text" required placeholder="Ex.: Salário, Comissão, PG Camila…" maxlength="80" style="text-transform:uppercase;">
+    </div>
+    <div class="field">
+      <label for="inc-source">Fonte</label>
+      <select id="inc-source" required>
+        <option value="" disabled>Escolha de quem é a receita</option>
+        <option value="jaylson">Jaylson</option>
+        <option value="camila">Camila</option>
+      </select>
     </div>
     <div class="field">
       <label for="inc-value">Valor (R$)</label>
@@ -1750,7 +1768,7 @@ function allTxForYear(year){
     }
     monthEntries(year, m).forEach(e => rows.push({
       id:e.id, type:e.type, desc:e.desc, value:Number(e.value)||0, category:e.category||null,
-      year, month:m, manual:true, dueDate: e.dueDate || null
+      year, month:m, manual:true, dueDate: e.dueDate || null, source: e.source || null
     }));
   }
   rows.sort((a,b) => b.month - a.month);
@@ -2369,6 +2387,23 @@ function renderExpenseTable(){
   });
 }
 
+/* ============ Fonte da receita (Jaylson / Camila) ============
+   Receitas novas gravam source:'jaylson'|'camila'. As antigas (planilha e
+   lançamentos de antes) não têm esse campo: quando a descrição traz o nome
+   ("PG JAYLSON", "COMISSÃO CAMILA") a fonte é deduzida dela; senão fica
+   "sem fonte" até alguém editar. */
+const INCOME_SOURCES = [{ id: 'jaylson', name: 'Jaylson' }, { id: 'camila', name: 'Camila' }];
+function incomeSourceOf(r){
+  if (r.source && INCOME_SOURCES.some(s => s.id === r.source)) return r.source;
+  const d = String(r.desc || '').toUpperCase();
+  const hits = INCOME_SOURCES.filter(s => d.includes(s.name.toUpperCase()));
+  return hits.length === 1 ? hits[0].id : null; // nome dos dois ou de nenhum: não chuta
+}
+function incomeSourceName(id){
+  const s = INCOME_SOURCES.find(x => x.id === id);
+  return s ? s.name : 'Sem fonte';
+}
+
 function renderIncomeTable(){
   let rows = allTxForYear(selectedYear).filter(r => r.type === 'receita');
   if (selectedMonth) rows = rows.filter(r => r.month === selectedMonth);
@@ -2394,6 +2429,21 @@ function renderIncomeTable(){
     `;
   }
 
+  // Quanto entrou por cada fonte no período (respeita a busca, como o total)
+  const bySource = { jaylson: 0, camila: 0, none: 0 };
+  rows.forEach(r => { bySource[incomeSourceOf(r) || 'none'] += r.value; });
+  const pct = v => total > 0 ? Math.round(v / total * 100) : 0;
+  const srcBox = (label, v, cls) => `
+    <div class="paid-stat income-src ${cls}">
+      <span class="paid-stat-label">${label}</span>
+      <span class="paid-stat-value num">${BRL.format(v)}</span>
+      <span class="income-src-pct">${pct(v)}% do recebido</span>
+    </div>`;
+  document.getElementById('income-sources').innerHTML =
+    srcBox('Por Jaylson', bySource.jaylson, 'src-jaylson') +
+    srcBox('Por Camila', bySource.camila, 'src-camila') +
+    (bySource.none > 0 ? srcBox('Sem fonte', bySource.none, 'src-none') : '');
+
   const body = document.getElementById('inc-body');
   if (!rows.length){
     body.innerHTML = `<tr class="empty-row"><td colspan="4">Nenhuma receita encontrada.</td></tr>`;
@@ -2402,6 +2452,7 @@ function renderIncomeTable(){
   body.innerHTML = rows.map(r => `
     <tr>
       <td class="cell-month">${MONTH_ABBR[r.month-1]}/${String(r.year).slice(2)}</td>
+      <td class="tag-cat income-src-tag${incomeSourceOf(r) ? '' : ' is-none'}">${incomeSourceName(incomeSourceOf(r))}</td>
       <td class="tx-desc" title="${escapeHtml(r.desc)}">${escapeHtml(r.desc)}</td>
       <td class="amt num receita">+ ${BRL2.format(r.value)}</td>
       <td class="cell-actions">${r.manual ? `<span class="row-actions"><button class="edit-btn" data-edit-inc="${r.id}" title="Editar receita" aria-label="Editar receita">✎</button><button class="del-btn" data-del="${r.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span>` : ''}</td>
@@ -2517,6 +2568,8 @@ function openEditIncome(id){
   document.getElementById('inc-desc').value = entry.desc;
   document.getElementById('inc-value').value = entry.value;
   document.getElementById('inc-date').value = entry.date;
+  // receita antiga sem fonte: já sugere a deduzida pela descrição, se houver
+  document.getElementById('inc-source').value = incomeSourceOf(entry) || '';
   openModal('modal-income');
   document.getElementById('inc-desc').focus();
 }
@@ -2534,6 +2587,8 @@ document.getElementById('btn-open-income').addEventListener('click', () => {
   document.getElementById('form-income').reset();
   setIncomeModalMode(false);
   document.getElementById('inc-date').value = todayISO();
+  // já vem marcada a pessoa que está usando o app; dá pra trocar
+  document.getElementById('inc-source').value = INCOME_SOURCES.some(s => s.id === currentUser) ? currentUser : '';
   openModal('modal-income');
   document.getElementById('inc-desc').focus();
 });
@@ -2591,16 +2646,19 @@ document.getElementById('form-income').addEventListener('submit', async ev => {
   const desc = document.getElementById('inc-desc').value.trim().toUpperCase();
   const value = parseFloat(document.getElementById('inc-value').value);
   const date = document.getElementById('inc-date').value;
+  const source = document.getElementById('inc-source').value;
   if (!desc || !isFinite(value) || value <= 0 || !date) return;
+  if (!INCOME_SOURCES.some(s => s.id === source)){ document.getElementById('inc-source').focus(); return; }
   const whoName = (findUser(currentUser) || {}).name || currentUser || 'Alguém';
+  const srcName = incomeSourceName(source);
   if (editingIncomeId){
-    await updateEntry(editingIncomeId, { desc, value, date });
+    await updateEntry(editingIncomeId, { desc, value, date, source });
     showToast('Receita atualizada.');
-    notifyOthers('Livro de Caixa', `${whoName} atualizou a receita: ${desc} (${BRL2.format(value)})`);
+    notifyOthers('Livro de Caixa', `${whoName} atualizou a receita de ${srcName}: ${desc} (${BRL2.format(value)})`);
   } else {
-    await addEntry({ type:'receita', desc, value, category:null, date, createdAt: new Date().toISOString() });
-    showToast('Receita registrada.');
-    notifyOthers('Livro de Caixa', `${whoName} lançou uma receita: ${desc} (${BRL2.format(value)})`);
+    await addEntry({ type:'receita', desc, value, category:null, date, source, createdAt: new Date().toISOString() });
+    showToast(`Receita de ${srcName} registrada.`);
+    notifyOthers('Livro de Caixa', `${whoName} lançou uma receita de ${srcName}: ${desc} (${BRL2.format(value)})`);
   }
   ev.target.reset();
   closeModal('modal-income');
@@ -2841,7 +2899,7 @@ document.getElementById('auth-pass').focus();
    10 minutos. Se houver, recarrega sozinho quando não há nada sendo digitado;
    senão mostra uma barra "Atualizar". Só no link do GitHub Pages (no
    claude.ai a página já é sempre servida na versão mais nova). */
-const APP_VERSION = '2026101603';
+const APP_VERSION = '2026101604';
 const UPDATE_RELOAD_KEY = 'livrocaixa_update_tried';
 
 function updateCheckEnabled(){
