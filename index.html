@@ -178,6 +178,21 @@
   .amt.invest{color:var(--invest-dark);}
   .amt.invest.is-out{color:var(--ink-2);}
   .tx-card-invest table.tx td.cell-actions{margin-inline-start:auto;}
+  .invest-acct{gap:1px;}
+  .invest-acct .paid-stat-value{color:var(--invest-dark);}
+  .invest-acct-sub{font-size:.72rem; color:var(--ink-2);}
+  .invest-acct-sub:last-child{color:var(--ink-muted); opacity:.8;}
+  .invest-acct-sub .pos{color:var(--income-dark);}
+  .invest-acct-sub .neg{color:var(--expense-dark);}
+
+  /* seletor "Atualizar saldo / Aporte / Resgate" no formulário */
+  .seg{display:flex; gap:4px; padding:4px; border-radius:11px; background:var(--surface-2); border:1px solid var(--border); margin-block-end:14px;}
+  .seg-btn{flex:1; border:none; background:transparent; color:var(--ink-2); font:inherit; font-size:.82rem; font-weight:700; padding:8px 10px; border-radius:8px; cursor:pointer;}
+  .seg-btn.is-on{background:var(--invest); color:var(--invest-ink);}
+  .seg-btn:focus-visible{outline:2px solid var(--invest); outline-offset:1px;}
+  .seg.is-locked .seg-btn:not(.is-on){display:none;}
+  .inv-help{font-size:.76rem; color:var(--ink-muted); margin:-4px 0 12px; line-height:1.45;}
+  .inv-last{font-weight:400; color:var(--ink-muted);}
   #chart-invest .axis-label{font-size:10px;}
   #chart-invest .val-label{font-size:11.5px; paint-order:stroke; stroke:var(--surface); stroke-width:4px; stroke-linejoin:round;}
 
@@ -594,10 +609,11 @@
   <div class="card tx-card-invest">
     <div class="card-head">
       <h2><span class="dot" style="background:var(--invest)"></span>Investimentos</h2>
-      <span class="hint">Valor acumulado no fim de cada mês</span>
+      <span class="hint">Valor total das contas no fim de cada mês</span>
     </div>
-    <svg class="chart" id="chart-invest" viewBox="0 0 640 210" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Valor investido acumulado no fim de cada mês"></svg>
-    <p class="invest-empty" id="invest-empty" hidden>Nenhum investimento registrado ainda. Use <strong>+ Investimento</strong> para lançar o primeiro aporte.</p>
+    <div class="paid-summary" id="invest-accounts"></div>
+    <svg class="chart" id="chart-invest" viewBox="0 0 640 210" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Valor total investido no fim de cada mês"></svg>
+    <p class="invest-empty" id="invest-empty" hidden>Nenhum saldo informado ainda. Use <strong>+ Investimento</strong> e digite o valor total que aparece em cada conta.</p>
     <div class="card-head invest-list-head">
       <h3>Lançamentos</h3>
       <span class="hint" id="invest-hint"></span>
@@ -669,28 +685,47 @@
 
 <!-- Modal: investimento -->
 <div class="modal-backdrop" id="modal-invest" hidden>
-  <form class="modal" id="form-invest">
-    <h3 id="inv-modal-title">Registrar investimento</h3>
-    <p class="modal-sub" id="inv-modal-sub">Lança um aporte (dinheiro aplicado) ou um resgate (dinheiro retirado).</p>
-    <div class="field">
-      <label for="inv-kind">Tipo</label>
-      <select id="inv-kind">
-        <option value="aporte">Aporte (aplicar)</option>
-        <option value="resgate">Resgate (retirar)</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="inv-desc">Descrição</label>
-      <input id="inv-desc" type="text" required placeholder="Ex.: Tesouro Selic, CDB, Poupança…" maxlength="80" style="text-transform:uppercase;">
-    </div>
-    <div class="field">
-      <label for="inv-value">Valor (R$)</label>
-      <input id="inv-value" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0,00">
+  <form class="modal" id="form-invest" novalidate>
+    <h3 id="inv-modal-title">Investimentos</h3>
+    <p class="modal-sub" id="inv-modal-sub">Digite o valor total que aparece em cada conta. O rendimento é calculado sozinho.</p>
+    <div class="seg" id="inv-seg" role="tablist" aria-label="Tipo de lançamento">
+      <button type="button" class="seg-btn is-on" data-inv-mode="saldo" role="tab" aria-selected="true">Atualizar saldo</button>
+      <button type="button" class="seg-btn" data-inv-mode="mov" role="tab" aria-selected="false">Aporte / Resgate</button>
     </div>
     <div class="field">
       <label for="inv-date">Data</label>
-      <input id="inv-date" type="date" required>
+      <input id="inv-date" type="date">
     </div>
+
+    <div id="inv-panel-saldo">
+      <div id="inv-saldo-fields"></div>
+      <p class="inv-help">Deixe em branco a conta que não for atualizar.</p>
+    </div>
+
+    <div id="inv-panel-mov" hidden>
+      <p class="inv-help">Use só quando colocar dinheiro novo na conta ou tirar dinheiro dela, para isso não ser contado como rendimento.</p>
+      <div class="field">
+        <label for="inv-account">Conta</label>
+        <select id="inv-account"></select>
+      </div>
+      <div class="field">
+        <label for="inv-kind">Tipo</label>
+        <select id="inv-kind">
+          <option value="aporte">Aporte (coloquei dinheiro)</option>
+          <option value="resgate">Resgate (tirei dinheiro)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="inv-value">Valor (R$)</label>
+        <input id="inv-value" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label for="inv-desc">Descrição <span style="font-weight:400; color:var(--ink-muted);">(opcional)</span></label>
+        <input id="inv-desc" type="text" placeholder="Ex.: Aporte mensal" maxlength="80" style="text-transform:uppercase;">
+      </div>
+    </div>
+
+    <p class="auth-error" id="inv-error" hidden></p>
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" data-close="modal-invest">Cancelar</button>
       <button type="submit" class="btn btn-invest" id="inv-submit-btn">Salvar investimento</button>
@@ -1577,30 +1612,76 @@ function monthTotals(year, month){
 /* ============ Investimentos ============
    Ficam na mesma coleção dos lançamentos (type:'investimento'), então
    sincronizam entre aparelhos sem precisar de regra nova no Firestore.
-   kind: 'aporte' soma, 'resgate' subtrai. O valor é sempre gravado positivo. */
+
+   Cada lançamento pertence a uma conta (account) e tem um kind:
+   - 'saldo'   → o valor TOTAL que aparece na conta naquela data (o que o
+                 banco mostra). É o lançamento do dia a dia.
+   - 'aporte'  → dinheiro novo colocado na conta (não é rendimento).
+   - 'resgate' → dinheiro tirado da conta.
+
+   Saldo da conta no fim de um mês = último saldo informado até ali + aportes
+   − resgates feitos DEPOIS desse saldo (no mesmo dia, considera que o saldo
+   informado já inclui o movimento).
+   Rendimento do mês = saldo no fim do mês − saldo no fim do mês anterior
+   − aportes + resgates do mês. No primeiro mês de uma conta não há com o que
+   comparar, então o rendimento conta como zero (é o ponto de partida). */
+const INVEST_ACCOUNTS = ['XP Camila', 'XP Jaylson'];
 function isInvestment(e){ return e && e.type === 'investimento'; }
-function investSigned(e){
+function acctOf(e){ return e.account || 'Sem conta'; }
+function flowSigned(e){
   const v = Number(e.value) || 0;
   return e.kind === 'resgate' ? -v : v;
 }
-/* Total investido acumulado até o fim do mês (year, month), somando tudo
-   desde o primeiro lançamento — é o "saldo" da carteira naquele mês. */
-function investTotalUntil(year, month){
-  const limit = year * 100 + month;
-  return entries.reduce((acc, e) => {
-    if (!isInvestment(e)) return acc;
-    const k = entryYear(e) * 100 + entryMonth(e);
-    return k <= limit ? acc + investSigned(e) : acc;
-  }, 0);
+/* Contas fixas + qualquer outra que já tenha lançamento (ex.: lançamentos
+   antigos sem conta aparecem como "Sem conta") */
+function investAccounts(){
+  const list = [...INVEST_ACCOUNTS];
+  entries.forEach(e => {
+    if (isInvestment(e) && !list.includes(acctOf(e))) list.push(acctOf(e));
+  });
+  return list;
 }
-/* Movimento líquido (aportes − resgates) só dentro do período */
-function investNetInPeriod(year, month){
-  return entries.reduce((acc, e) => {
-    if (!isInvestment(e) || entryYear(e) !== year) return acc;
-    if (month && entryMonth(e) !== month) return acc;
-    return acc + investSigned(e);
-  }, 0);
+function monthEndISO(y, m){ return `${y}-${String(m).padStart(2,'0')}-31`; }
+function prevYM(y, m){ return m === 1 ? [y - 1, 12] : [y, m - 1]; }
+
+/* Saldo de uma conta até a data limite (inclusive). has=false quando ainda
+   não existe nenhum lançamento da conta até ali. */
+function accountBalanceAt(acct, limitISO){
+  const list = entries.filter(e => isInvestment(e) && acctOf(e) === acct && String(e.date) <= limitISO);
+  if (!list.length) return { value: 0, has: false, lastSnap: null };
+  let last = null;
+  list.forEach(e => {
+    if (e.kind !== 'saldo') return;
+    if (!last || e.date > last.date || (e.date === last.date && String(e.createdAt || '') > String(last.createdAt || ''))) last = e;
+  });
+  const since = last ? last.date : '';
+  const flows = list.filter(e => e.kind !== 'saldo' && String(e.date) > since)
+                    .reduce((a, e) => a + flowSigned(e), 0);
+  return { value: (last ? Number(last.value) || 0 : 0) + flows, has: true, lastSnap: last };
 }
+function accountYieldInMonth(acct, y, m){
+  const cur = accountBalanceAt(acct, monthEndISO(y, m));
+  const [py, pm] = prevYM(y, m);
+  const prev = accountBalanceAt(acct, monthEndISO(py, pm));
+  if (!cur.has || !prev.has) return 0;
+  const flowsInMonth = entries
+    .filter(e => isInvestment(e) && acctOf(e) === acct && e.kind !== 'saldo' && entryYear(e) === y && entryMonth(e) === m)
+    .reduce((a, e) => a + flowSigned(e), 0);
+  return cur.value - prev.value - flowsInMonth;
+}
+/* Total de todas as contas no fim do mês */
+function investTotalAt(y, m){
+  return investAccounts().reduce((a, acct) => a + accountBalanceAt(acct, monthEndISO(y, m)).value, 0);
+}
+/* Rendimento de uma conta (ou de todas, se acct=null) no mês ou no ano inteiro */
+function investYield(y, month, acct){
+  const accts = acct ? [acct] : investAccounts();
+  const months = month ? [month] : Array.from({length: 12}, (_, i) => i + 1);
+  let total = 0;
+  accts.forEach(a => months.forEach(m => { total += accountYieldInMonth(a, y, m); }));
+  return total;
+}
+function signedBRL(v){ return `${v < 0 ? '−' : '+'} ${BRL.format(Math.abs(v))}`; }
 
 function yearSummary(year){
   let income = 0, expense = 0, monthsWithData = 0;
@@ -1876,13 +1957,14 @@ function renderKPIs(){
       </div>`;
   }
 
-  // Investimento: total acumulado até o fim do período em exibição, com o
-  // movimento do próprio período logo abaixo.
-  const investTotal = investTotalUntil(selectedYear, selectedMonth || 12);
-  const investNet = investNetInPeriod(selectedYear, selectedMonth);
-  const investSub = investNet === 0
-    ? `nada aplicado ${selectedMonth ? 'no mês' : 'em ' + selectedYear}`
-    : `${investNet > 0 ? '+' : '−'} ${BRL.format(Math.abs(investNet))} ${selectedMonth ? 'no mês' : 'em ' + selectedYear}`;
+  // Investimento: soma das contas no fim do período em exibição, e quanto
+  // rendeu nesse período (calculado pela diferença entre os saldos).
+  const investTotal = investTotalAt(selectedYear, selectedMonth || 12);
+  const investRend = investYield(selectedYear, selectedMonth, null);
+  const periodWord = selectedMonth ? 'no mês' : 'em ' + selectedYear;
+  const investSub = entries.some(isInvestment)
+    ? `rendeu ${signedBRL(investRend)} ${periodWord}`
+    : 'informe o saldo das contas';
   const investCard = `
     <div class="kpi kpi-invest">
       <span class="label">Investimento total</span>
@@ -2038,7 +2120,7 @@ function renderInvestChart(){
     : now.getMonth() + 1;
 
   const vals = [];
-  for (let m = 1; m <= 12; m++) vals.push(m <= lastMonth ? investTotalUntil(selectedYear, m) : null);
+  for (let m = 1; m <= 12; m++) vals.push(m <= lastMonth ? investTotalAt(selectedYear, m) : null);
   const maxVal = Math.max(0, ...vals.filter(v => v !== null));
   const niceMax = niceCeil(maxVal);
 
@@ -2075,7 +2157,8 @@ function renderInvestChart(){
     const x0 = cx - barW / 2, r = Math.min(4, barW / 2, h);
     // barra com só o topo arredondado, apoiada na linha de base
     const d = `M${x0},${base} V${base - h + r} Q${x0},${base - h} ${x0 + r},${base - h} H${x0 + barW - r} Q${x0 + barW},${base - h} ${x0 + barW},${base - h + r} V${base} Z`;
-    bars += `<path class="bar-tip" data-month="${m}" data-tip="${MONTH_ABBR[i]}/${selectedYear} — Investido: ${BRL2.format(v)}" d="${d}" fill="var(--invest)" opacity="${dim ? 0.35 : 1}"></path>`;
+    const rend = investYield(selectedYear, m, null);
+    bars += `<path class="bar-tip" data-month="${m}" data-tip="${MONTH_ABBR[i]}/${selectedYear} — Total: ${BRL2.format(v)} · rendeu ${rend < 0 ? '−' : '+'} ${BRL2.format(Math.abs(rend))}" d="${d}" fill="var(--invest)" opacity="${dim ? 0.35 : 1}"></path>`;
     if (m === labelMonth){
       // perto da borda direita o rótulo alinha pela direita para não ser cortado
       const nearRight = cx + 34 > W - padR;
@@ -2100,28 +2183,48 @@ window.addEventListener('resize', () => {
 function renderInvestList(){
   let rows = entries.filter(e => isInvestment(e) && entryYear(e) === selectedYear);
   if (selectedMonth) rows = rows.filter(e => entryMonth(e) === selectedMonth);
-  rows.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  rows.sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 
-  const net = rows.reduce((a, e) => a + investSigned(e), 0);
+  // Resumo por conta: saldo no fim do período e quanto rendeu nele
+  const endM = selectedMonth || 12;
+  const periodWord = selectedMonth ? 'no mês' : 'em ' + selectedYear;
+  const accts = investAccounts().filter(a => INVEST_ACCOUNTS.includes(a) || accountBalanceAt(a, monthEndISO(selectedYear, endM)).has);
+  document.getElementById('invest-accounts').innerHTML = accts.map(a => {
+    const bal = accountBalanceAt(a, monthEndISO(selectedYear, endM));
+    const rend = investYield(selectedYear, selectedMonth, a);
+    const snap = bal.lastSnap;
+    const when = snap ? `saldo de ${formatDueDate(snap.date)}/${String(snap.date).slice(2,4)}` : (bal.has ? 'só aportes' : 'sem saldo informado');
+    return `<div class="paid-stat invest-acct">
+      <span class="paid-stat-label">${escapeHtml(a)}</span>
+      <span class="paid-stat-value num">${bal.has ? BRL.format(bal.value) : '—'}</span>
+      <span class="invest-acct-sub">${bal.has ? `rendeu <strong class="${rend < 0 ? 'neg' : 'pos'}">${signedBRL(rend)}</strong> ${periodWord}` : ''}</span>
+      <span class="invest-acct-sub">${when}</span>
+    </div>`;
+  }).join('');
+
   document.getElementById('invest-hint').textContent =
-    `${rows.length} ${rows.length === 1 ? 'lançamento' : 'lançamentos'} · ${net < 0 ? '−' : ''}${BRL.format(Math.abs(net))} em ${periodLabelText()}`;
+    `${rows.length} ${rows.length === 1 ? 'lançamento' : 'lançamentos'} em ${periodLabelText()}`;
 
   const body = document.getElementById('inv-body');
   if (!rows.length){
-    body.innerHTML = `<tr class="empty-row"><td colspan="5">Nenhum investimento em ${periodLabelText()}.</td></tr>`;
+    body.innerHTML = `<tr class="empty-row"><td colspan="5">Nenhum lançamento de investimento em ${periodLabelText()}.</td></tr>`;
     return;
   }
   body.innerHTML = rows.map(e => {
-    const out = e.kind === 'resgate';
+    const kind = e.kind === 'saldo' ? 'saldo' : e.kind === 'resgate' ? 'resgate' : 'aporte';
     const m = entryMonth(e), y = entryYear(e);
+    const valTxt = kind === 'saldo' ? BRL2.format(Number(e.value) || 0)
+      : `${kind === 'resgate' ? '−' : '+'} ${BRL2.format(Number(e.value) || 0)}`;
+    const tag = kind === 'saldo' ? 'Saldo informado' : kind === 'resgate' ? 'Resgate' : 'Aporte';
+    const title = kind === 'saldo' ? acctOf(e) : (e.desc || tag);
     return `
     <tr>
-      <td class="tx-desc" title="${escapeHtml(e.desc)}">${escapeHtml(e.desc)}</td>
-      <td class="amt num invest${out ? ' is-out' : ''}">${out ? '−' : '+'} ${BRL2.format(Number(e.value) || 0)}</td>
-      <td class="cell-actions"><span class="row-actions"><button class="edit-btn" data-edit-inv="${e.id}" title="Editar investimento" aria-label="Editar investimento">✎</button><button class="del-btn" data-del="${e.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span></td>
+      <td class="tx-desc" title="${escapeHtml(title)}">${escapeHtml(title)}</td>
+      <td class="amt num invest${kind === 'resgate' ? ' is-out' : ''}">${valTxt}</td>
+      <td class="cell-actions"><span class="row-actions"><button class="edit-btn" data-edit-inv="${e.id}" title="Editar lançamento" aria-label="Editar lançamento">✎</button><button class="del-btn" data-del="${e.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span></td>
       <td class="row-break row-break-meta" aria-hidden="true"></td>
-      <td class="cell-month">${MONTH_ABBR[m - 1]}/${String(y).slice(2)}</td>
-      <td class="tag-cat">${out ? 'Resgate' : 'Aporte'}</td>
+      <td class="cell-month">${formatDueDate(e.date)}/${String(y).slice(2)}</td>
+      <td class="tag-cat">${tag}${kind !== 'saldo' ? ' · ' + escapeHtml(acctOf(e)) : ''}</td>
     </tr>`;
   }).join('');
   body.querySelectorAll('[data-del]').forEach(btn => {
@@ -2491,51 +2594,157 @@ document.getElementById('form-income').addEventListener('submit', async ev => {
   renderAll();
 });
 
-/* ---------- Investimento: abrir, editar, salvar ---------- */
-function setInvestModalMode(editing){
-  document.getElementById('inv-modal-title').textContent = editing ? 'Editar investimento' : 'Registrar investimento';
+/* ---------- Investimento: abrir, editar, salvar ----------
+   Duas formas de lançar:
+   - "Atualizar saldo": um campo por conta; cada valor preenchido vira um
+     lançamento kind:'saldo' daquela conta na data escolhida.
+   - "Aporte / Resgate": dinheiro que entrou ou saiu da conta, para não ser
+     confundido com rendimento. */
+let investMode = 'saldo';
+let investFieldAccounts = []; // ordem das contas nos campos de saldo abertos
+
+function setInvestMode(mode){
+  investMode = mode;
+  document.querySelectorAll('#inv-seg .seg-btn').forEach(b => {
+    const on = b.dataset.invMode === mode;
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  document.getElementById('inv-panel-saldo').hidden = mode !== 'saldo';
+  document.getElementById('inv-panel-mov').hidden = mode !== 'mov';
+  document.getElementById('inv-error').hidden = true;
+}
+document.querySelectorAll('#inv-seg .seg-btn').forEach(b => {
+  b.addEventListener('click', () => { if (!editingInvestId) setInvestMode(b.dataset.invMode); });
+});
+
+/* Monta um campo por conta, mostrando o último saldo conhecido como referência.
+   onlyAcct: na edição de um saldo, mostra só a conta daquele lançamento. */
+function buildInvestSaldoFields(onlyAcct){
+  const date = document.getElementById('inv-date').value || localTodayISO();
+  investFieldAccounts = onlyAcct ? [onlyAcct] : investAccounts().filter(a => INVEST_ACCOUNTS.includes(a) || a !== 'Sem conta');
+  document.getElementById('inv-saldo-fields').innerHTML = investFieldAccounts.map((a, i) => {
+    const bal = accountBalanceAt(a, date);
+    const hint = bal.has ? `último: ${BRL2.format(bal.value)}${bal.lastSnap ? ' em ' + formatDueDate(bal.lastSnap.date) : ''}` : 'primeiro saldo desta conta';
+    return `<div class="field">
+      <label for="inv-saldo-${i}">${escapeHtml(a)} <span class="inv-last">· ${hint}</span></label>
+      <input id="inv-saldo-${i}" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Valor total na conta (R$)">
+    </div>`;
+  }).join('');
+}
+function fillInvestAccountSelect(selected){
+  const sel = document.getElementById('inv-account');
+  sel.innerHTML = investAccounts().map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  if (selected) sel.value = selected;
+}
+
+function setInvestModalTexts(editing){
+  document.getElementById('inv-modal-title').textContent = editing ? 'Editar lançamento' : 'Investimentos';
   document.getElementById('inv-modal-sub').textContent = editing
     ? 'Altere os dados e salve para atualizar este lançamento.'
-    : 'Lança um aporte (dinheiro aplicado) ou um resgate (dinheiro retirado).';
-  document.getElementById('inv-submit-btn').textContent = editing ? 'Salvar alterações' : 'Salvar investimento';
+    : 'Digite o valor total que aparece em cada conta. O rendimento é calculado sozinho.';
+  document.getElementById('inv-submit-btn').textContent = editing ? 'Salvar alterações' : 'Salvar';
+  document.getElementById('inv-seg').classList.toggle('is-locked', !!editing);
 }
+
 function openEditInvest(id){
   const entry = findEntry(id);
   if (!entry) return;
   editingInvestId = id;
-  setInvestModalMode(true);
-  document.getElementById('inv-kind').value = entry.kind === 'resgate' ? 'resgate' : 'aporte';
-  document.getElementById('inv-desc').value = entry.desc;
-  document.getElementById('inv-value').value = entry.value;
+  document.getElementById('form-invest').reset();
+  setInvestModalTexts(true);
   document.getElementById('inv-date').value = entry.date;
+  if (entry.kind === 'saldo'){
+    setInvestMode('saldo');
+    buildInvestSaldoFields(acctOf(entry));
+    document.getElementById('inv-saldo-0').value = entry.value;
+  } else {
+    setInvestMode('mov');
+    fillInvestAccountSelect(acctOf(entry));
+    document.getElementById('inv-kind').value = entry.kind === 'resgate' ? 'resgate' : 'aporte';
+    document.getElementById('inv-value').value = entry.value;
+    const defDesc = `${entry.kind === 'resgate' ? 'RESGATE' : 'APORTE'} ${acctOf(entry).toUpperCase()}`;
+    document.getElementById('inv-desc').value = entry.desc && entry.desc !== defDesc ? entry.desc : '';
+  }
   openModal('modal-invest');
-  document.getElementById('inv-desc').focus();
 }
 document.getElementById('btn-open-invest').addEventListener('click', () => {
   editingInvestId = null;
   document.getElementById('form-invest').reset();
-  setInvestModalMode(false);
+  setInvestModalTexts(false);
   document.getElementById('inv-date').value = localTodayISO();
+  setInvestMode('saldo');
+  buildInvestSaldoFields(null);
+  fillInvestAccountSelect(INVEST_ACCOUNTS[0]);
   openModal('modal-invest');
-  document.getElementById('inv-desc').focus();
+  const first = document.getElementById('inv-saldo-0');
+  if (first) first.focus();
 });
+// mudar a data atualiza o "último saldo" mostrado em cada conta
+document.getElementById('inv-date').addEventListener('change', () => {
+  if (investMode !== 'saldo' || editingInvestId) return;
+  const typed = investFieldAccounts.map((_, i) => document.getElementById('inv-saldo-' + i).value);
+  buildInvestSaldoFields(null);
+  typed.forEach((v, i) => { const el = document.getElementById('inv-saldo-' + i); if (el) el.value = v; });
+});
+
+function showInvestError(msg){
+  const el = document.getElementById('inv-error');
+  el.textContent = msg;
+  el.hidden = false;
+}
+
 document.getElementById('form-invest').addEventListener('submit', async ev => {
   ev.preventDefault();
-  const kind = document.getElementById('inv-kind').value === 'resgate' ? 'resgate' : 'aporte';
-  const desc = document.getElementById('inv-desc').value.trim().toUpperCase();
-  const value = parseFloat(document.getElementById('inv-value').value);
   const date = document.getElementById('inv-date').value;
-  if (!desc || !isFinite(value) || value <= 0 || !date) return;
+  if (!date){ showInvestError('Escolha a data.'); return; }
   const whoName = (findUser(currentUser) || {}).name || currentUser || 'Alguém';
-  const verb = kind === 'resgate' ? 'um resgate' : 'um investimento';
-  if (editingInvestId){
-    await updateEntry(editingInvestId, { desc, value, date, kind });
-    showToast('Investimento atualizado.');
-    notifyOthers('Livro de Caixa', `${whoName} atualizou o investimento: ${desc} (${BRL2.format(value)})`);
+
+  if (investMode === 'saldo'){
+    const items = investFieldAccounts.map((a, i) => ({ acct: a, raw: document.getElementById('inv-saldo-' + i).value }))
+      .filter(it => String(it.raw).trim() !== '')
+      .map(it => ({ acct: it.acct, value: parseFloat(it.raw) }));
+    if (!items.length){ showInvestError('Digite o saldo de pelo menos uma conta.'); return; }
+    if (items.some(it => !isFinite(it.value) || it.value < 0)){ showInvestError('Confira os valores digitados.'); return; }
+
+    if (editingInvestId){
+      const it = items[0];
+      await updateEntry(editingInvestId, { value: it.value, date, desc: `SALDO ${it.acct.toUpperCase()}` });
+      showToast('Saldo atualizado.');
+      notifyOthers('Livro de Caixa', `${whoName} corrigiu o saldo de ${it.acct}: ${BRL2.format(it.value)}`);
+    } else {
+      // rendimento desde o último saldo, calculado antes de gravar o novo
+      const parts = items.map(it => {
+        const before = accountBalanceAt(it.acct, date);
+        return { ...it, rend: before.has ? it.value - before.value : null };
+      });
+      for (const it of parts){
+        await addEntry({ type:'investimento', kind:'saldo', account: it.acct, desc: `SALDO ${it.acct.toUpperCase()}`,
+          value: it.value, category:null, date, createdAt: new Date().toISOString() });
+      }
+      const withRend = parts.filter(p => p.rend !== null);
+      const totalRend = withRend.reduce((a, p) => a + p.rend, 0);
+      showToast(withRend.length ? `Saldos salvos · rendeu ${signedBRL(totalRend)}` : 'Saldos salvos.');
+      notifyOthers('Livro de Caixa', `${whoName} atualizou os investimentos: ` +
+        parts.map(p => `${p.acct} ${BRL2.format(p.value)}${p.rend !== null ? ` (${p.rend < 0 ? '−' : '+'}${BRL2.format(Math.abs(p.rend))})` : ''}`).join(', '));
+    }
   } else {
-    await addEntry({ type:'investimento', kind, desc, value, category:null, date, createdAt: new Date().toISOString() });
-    showToast(kind === 'resgate' ? 'Resgate registrado.' : 'Investimento registrado.');
-    notifyOthers('Livro de Caixa', `${whoName} lançou ${verb}: ${desc} (${BRL2.format(value)})`);
+    const acct = document.getElementById('inv-account').value;
+    const kind = document.getElementById('inv-kind').value === 'resgate' ? 'resgate' : 'aporte';
+    const value = parseFloat(document.getElementById('inv-value').value);
+    if (!isFinite(value) || value <= 0){ showInvestError('Digite o valor.'); return; }
+    const desc = document.getElementById('inv-desc').value.trim().toUpperCase()
+      || `${kind === 'resgate' ? 'RESGATE' : 'APORTE'} ${acct.toUpperCase()}`;
+    const word = kind === 'resgate' ? 'resgate' : 'aporte';
+    if (editingInvestId){
+      await updateEntry(editingInvestId, { account: acct, kind, value, desc, date });
+      showToast(kind === 'resgate' ? 'Resgate atualizado.' : 'Aporte atualizado.');
+      notifyOthers('Livro de Caixa', `${whoName} atualizou um ${word} em ${acct}: ${BRL2.format(value)}`);
+    } else {
+      await addEntry({ type:'investimento', kind, account: acct, desc, value, category:null, date, createdAt: new Date().toISOString() });
+      showToast(kind === 'resgate' ? 'Resgate registrado.' : 'Aporte registrado.');
+      notifyOthers('Livro de Caixa', `${whoName} lançou um ${word} em ${acct}: ${BRL2.format(value)}`);
+    }
   }
   ev.target.reset();
   closeModal('modal-invest');
