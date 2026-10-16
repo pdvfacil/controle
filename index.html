@@ -18,6 +18,7 @@
     --cat-1:#2f5fff; --cat-2:#22b8e0; --cat-3:#17a398; --cat-4:#8b5cf6;
     --cat-5:#17203a; --cat-6:#c6e23a; --cat-7:#8a93b8; --cat-8:#f2b705;
     --pop-bg:#151f45; --pop-ink:#ffffff;
+    --invest:#7c3aed; --invest-ink:#ffffff; --invest-soft:#efe8fd; --invest-dark:#6427cc;
     color-scheme:light;
   }
   @media (prefers-color-scheme: dark){
@@ -31,6 +32,7 @@
       --cat-1:#5b8dff; --cat-2:#4fd0f0; --cat-3:#2fd9c4; --cat-4:#a78bfa;
       --cat-5:#e7e9f2; --cat-6:#d9ef6a; --cat-7:#9aa3c4; --cat-8:#ffd24d;
       --pop-bg:#eef1fb; --pop-ink:#0a1330;
+      --invest:#a78bfa; --invest-ink:#1b1036; --invest-soft:#2a2352; --invest-dark:#c4b5fd;
       color-scheme:dark;
     }
   }
@@ -44,6 +46,7 @@
     --cat-1:#5b8dff; --cat-2:#4fd0f0; --cat-3:#2fd9c4; --cat-4:#a78bfa;
     --cat-5:#e7e9f2; --cat-6:#d9ef6a; --cat-7:#9aa3c4; --cat-8:#ffd24d;
     --pop-bg:#eef1fb; --pop-ink:#0a1330;
+      --invest:#a78bfa; --invest-ink:#1b1036; --invest-soft:#2a2352; --invest-dark:#c4b5fd;
     color-scheme:dark;
   }
 
@@ -116,7 +119,8 @@
   .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
   .btn-expense{background:var(--expense); color:var(--expense-ink); box-shadow:0 3px 10px -3px color-mix(in oklab, var(--expense) 65%, transparent);}
   .btn-income{background:var(--income); color:var(--income-ink); box-shadow:0 3px 10px -3px color-mix(in oklab, var(--income) 65%, transparent);}
-  .btn-expense:hover, .btn-income:hover{filter:brightness(1.06);}
+  .btn-invest{background:var(--invest); color:var(--invest-ink); box-shadow:0 3px 10px -3px color-mix(in oklab, var(--invest) 65%, transparent);}
+  .btn-expense:hover, .btn-income:hover, .btn-invest:hover{filter:brightness(1.06);}
   .btn-ghost{background:var(--surface-2); color:var(--ink);}
   .btn-ghost:hover{filter:brightness(0.97);}
   @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .btn-ghost:hover{filter:brightness(1.15);} }
@@ -149,7 +153,11 @@
      conteúdo em alguns navegadores (Safari/iOS incluso) mesmo com
      min-width:0 no item -- foi isso que fazia os cards de KPI passarem
      um pouco da tela no celular. */
-  @media (max-width:760px){ .kpis{grid-template-columns:repeat(2, minmax(0, 1fr));} }
+  @media (max-width:760px){
+    .kpis{grid-template-columns:repeat(2, minmax(0, 1fr));}
+    /* com 5 cartões (visão do ano) o último ocupa a linha toda em vez de ficar sozinho pela metade */
+    .kpis > .kpi:last-child:nth-child(odd){grid-column:1 / -1;}
+  }
   .kpi{
     background:var(--surface); border:1px solid var(--border); border-radius:18px;
     padding:16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;
@@ -160,6 +168,18 @@
   .kpi .sub{font-size:.76rem; color:var(--ink-muted); overflow-wrap:break-word;}
   .kpi.saldo-pos .value{color:var(--income-dark);}
   .kpi.saldo-neg .value{color:var(--expense-dark);}
+  .kpi.kpi-invest .value{color:var(--invest-dark);}
+
+  /* ---------- Investimentos ---------- */
+  .tx-card-invest{border-top:3px solid var(--invest);}
+  .invest-empty{margin:4px 0 12px; padding:18px 14px; text-align:center; font-size:.84rem; color:var(--ink-2); background:var(--surface-2); border-radius:12px;}
+  .invest-list-head{margin-block:14px 4px;}
+  .invest-list-head h3{font-size:.9rem;}
+  .amt.invest{color:var(--invest-dark);}
+  .amt.invest.is-out{color:var(--ink-2);}
+  .tx-card-invest table.tx td.cell-actions{margin-inline-start:auto;}
+  #chart-invest .axis-label{font-size:10px;}
+  #chart-invest .val-label{font-size:11.5px; paint-order:stroke; stroke:var(--surface); stroke-width:4px; stroke-linejoin:round;}
 
   /* ---------- Cards ---------- */
   .card{
@@ -485,6 +505,7 @@
     <div class="top-actions">
       <button class="btn btn-expense" id="btn-open-expense" type="button"><span class="plus">+</span> Despesa</button>
       <button class="btn btn-income" id="btn-open-income" type="button"><span class="plus">+</span> Receita</button>
+      <button class="btn btn-invest" id="btn-open-invest" type="button"><span class="plus">+</span> Investimento</button>
       <button class="btn btn-ghost" id="btn-settings" type="button" title="Configurações" aria-label="Configurações">⚙ Config</button>
       <button class="btn btn-ghost" id="btn-logout" type="button" title="Sair" aria-label="Sair">⏻ Sair</button>
     </div>
@@ -570,6 +591,24 @@
     <svg class="chart" id="chart-saldo" viewBox="0 0 640 150" preserveAspectRatio="xMidYMid meet"></svg>
   </div>
 
+  <div class="card tx-card-invest">
+    <div class="card-head">
+      <h2><span class="dot" style="background:var(--invest)"></span>Investimentos</h2>
+      <span class="hint">Valor acumulado no fim de cada mês</span>
+    </div>
+    <svg class="chart" id="chart-invest" viewBox="0 0 640 210" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Valor investido acumulado no fim de cada mês"></svg>
+    <p class="invest-empty" id="invest-empty" hidden>Nenhum investimento registrado ainda. Use <strong>+ Investimento</strong> para lançar o primeiro aporte.</p>
+    <div class="card-head invest-list-head">
+      <h3>Lançamentos</h3>
+      <span class="hint" id="invest-hint"></span>
+    </div>
+    <div class="tx-table-wrap">
+      <table class="tx">
+        <tbody id="inv-body"></tbody>
+      </table>
+    </div>
+  </div>
+
 </main>
 
 <!-- Modal: nova despesa -->
@@ -624,6 +663,37 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" data-close="modal-income">Cancelar</button>
       <button type="submit" class="btn btn-income" id="inc-submit-btn">Salvar receita</button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: investimento -->
+<div class="modal-backdrop" id="modal-invest" hidden>
+  <form class="modal" id="form-invest">
+    <h3 id="inv-modal-title">Registrar investimento</h3>
+    <p class="modal-sub" id="inv-modal-sub">Lança um aporte (dinheiro aplicado) ou um resgate (dinheiro retirado).</p>
+    <div class="field">
+      <label for="inv-kind">Tipo</label>
+      <select id="inv-kind">
+        <option value="aporte">Aporte (aplicar)</option>
+        <option value="resgate">Resgate (retirar)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="inv-desc">Descrição</label>
+      <input id="inv-desc" type="text" required placeholder="Ex.: Tesouro Selic, CDB, Poupança…" maxlength="80" style="text-transform:uppercase;">
+    </div>
+    <div class="field">
+      <label for="inv-value">Valor (R$)</label>
+      <input id="inv-value" type="number" inputmode="decimal" min="0" step="0.01" required placeholder="0,00">
+    </div>
+    <div class="field">
+      <label for="inv-date">Data</label>
+      <input id="inv-date" type="date" required>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" data-close="modal-invest">Cancelar</button>
+      <button type="submit" class="btn btn-invest" id="inv-submit-btn">Salvar investimento</button>
     </div>
   </form>
 </div>
@@ -1491,7 +1561,9 @@ function monthEntries(year, month){
 
 function monthTotals(year, month){
   const h = histMonth(year, month);
-  const me = monthEntries(year, month);
+  /* Só receitas e despesas entram aqui. Investimentos têm o próprio total
+     (ver investTotalUntil) e não contam como despesa nem mexem no saldo. */
+  const me = monthEntries(year, month).filter(e => e.type === 'receita' || e.type === 'despesa');
   let income = h ? (h.ti || 0) : 0;
   let expense = h ? (h.te || 0) : 0;
   me.forEach(e => {
@@ -1500,6 +1572,34 @@ function monthTotals(year, month){
   });
   const hasData = !!h || me.length > 0;
   return { income, expense, hasData };
+}
+
+/* ============ Investimentos ============
+   Ficam na mesma coleção dos lançamentos (type:'investimento'), então
+   sincronizam entre aparelhos sem precisar de regra nova no Firestore.
+   kind: 'aporte' soma, 'resgate' subtrai. O valor é sempre gravado positivo. */
+function isInvestment(e){ return e && e.type === 'investimento'; }
+function investSigned(e){
+  const v = Number(e.value) || 0;
+  return e.kind === 'resgate' ? -v : v;
+}
+/* Total investido acumulado até o fim do mês (year, month), somando tudo
+   desde o primeiro lançamento — é o "saldo" da carteira naquele mês. */
+function investTotalUntil(year, month){
+  const limit = year * 100 + month;
+  return entries.reduce((acc, e) => {
+    if (!isInvestment(e)) return acc;
+    const k = entryYear(e) * 100 + entryMonth(e);
+    return k <= limit ? acc + investSigned(e) : acc;
+  }, 0);
+}
+/* Movimento líquido (aportes − resgates) só dentro do período */
+function investNetInPeriod(year, month){
+  return entries.reduce((acc, e) => {
+    if (!isInvestment(e) || entryYear(e) !== year) return acc;
+    if (month && entryMonth(e) !== month) return acc;
+    return acc + investSigned(e);
+  }, 0);
 }
 
 function yearSummary(year){
@@ -1776,6 +1876,20 @@ function renderKPIs(){
       </div>`;
   }
 
+  // Investimento: total acumulado até o fim do período em exibição, com o
+  // movimento do próprio período logo abaixo.
+  const investTotal = investTotalUntil(selectedYear, selectedMonth || 12);
+  const investNet = investNetInPeriod(selectedYear, selectedMonth);
+  const investSub = investNet === 0
+    ? `nada aplicado ${selectedMonth ? 'no mês' : 'em ' + selectedYear}`
+    : `${investNet > 0 ? '+' : '−'} ${BRL.format(Math.abs(investNet))} ${selectedMonth ? 'no mês' : 'em ' + selectedYear}`;
+  const investCard = `
+    <div class="kpi kpi-invest">
+      <span class="label">Investimento total</span>
+      <span class="value num">${investTotal < 0 ? '−' : ''}${BRL.format(Math.abs(investTotal))}</span>
+      <span class="sub">${investSub}</span>
+    </div>`;
+
   el.innerHTML = `
     <div class="kpi">
       <span class="label">Receitas ${selectedMonth?'no mês':'em '+selectedYear}</span>
@@ -1792,6 +1906,7 @@ function renderKPIs(){
       <span class="value num">${s.saldo>=0?'':'-'}${BRL.format(Math.abs(s.saldo))}</span>
       <span class="sub">receitas − despesas</span>
     </div>
+    ${investCard}
     ${fourthCard}
   `;
 }
@@ -1882,6 +1997,139 @@ function renderSaldoChart(){
     <text class="val-label" x="${x(11).toFixed(1)}" y="${(y(finalVal)-10).toFixed(1)}" text-anchor="end" fill="${lineColor}">${BRL2.format(finalVal)}</text>
   `;
   attachTooltips(svg);
+}
+
+/* ============ Render: investimentos (gráfico + lista) ============ */
+/* Arredonda o topo do eixo pra um valor "redondo" (1, 2, 2,5 ou 5 × 10ⁿ) */
+function niceCeil(v){
+  if (v <= 0) return 1000;
+  const pow = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const f of [1, 2, 2.5, 5, 10]){ if (f * pow >= v) return f * pow; }
+  return 10 * pow;
+}
+function axisMoney(v){
+  if (v >= 1000){
+    const k = v / 1000;
+    return (Number.isInteger(k) ? k : k.toFixed(1).replace('.', ',')) + 'k';
+  }
+  return String(Math.round(v));
+}
+
+function renderInvestChart(){
+  const svg = document.getElementById('chart-invest');
+  const empty = document.getElementById('invest-empty');
+  const hasAny = entries.some(isInvestment);
+  svg.hidden = !hasAny;
+  empty.hidden = hasAny;
+  if (!hasAny){ svg.innerHTML = ''; return; }
+
+  // Desenha na largura real da tela (em vez de encolher um desenho de 640px),
+  // assim meses e valores ficam com tamanho de letra legível no celular.
+  const W = Math.max(300, Math.round(svg.getBoundingClientRect().width) || 640);
+  const H = W < 500 ? 190 : 220, padL = 40, padR = 8, padT = 24, padB = 24;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  // Meses ainda não chegados (no ano atual) ficam sem barra: o valor deles
+  // seria só a repetição do mês atual.
+  const now = new Date();
+  const lastMonth = selectedYear < now.getFullYear() ? 12
+    : selectedYear > now.getFullYear() ? 0
+    : now.getMonth() + 1;
+
+  const vals = [];
+  for (let m = 1; m <= 12; m++) vals.push(m <= lastMonth ? investTotalUntil(selectedYear, m) : null);
+  const maxVal = Math.max(0, ...vals.filter(v => v !== null));
+  const niceMax = niceCeil(maxVal);
+
+  const groupW = plotW / 12;
+  const barW = Math.min(26, groupW * 0.58);
+  const yOf = v => padT + plotH - (Math.max(0, v) / niceMax) * plotH;
+
+  // divisões da escala sempre em números redondos (ex.: 0/100/200…/500)
+  const lead = niceMax / Math.pow(10, Math.floor(Math.log10(niceMax)));
+  const steps = lead === 2 ? 4 : 5;
+  let grid = '';
+  for (let i = 0; i <= steps; i++){
+    const val = niceMax * i / steps;
+    const y = yOf(val);
+    grid += `<line class="${i === 0 ? 'zero-line' : 'grid-line'}" x1="${padL}" x2="${W - padR}" y1="${y}" y2="${y}"/>`;
+    grid += `<text class="axis-label" x="${padL - 6}" y="${y + 3}" text-anchor="end">${axisMoney(val)}</text>`;
+  }
+
+  // Rótulo de valor só em uma barra: o mês selecionado, ou o último mês com dado
+  const labelMonth = selectedMonth && selectedMonth <= lastMonth ? selectedMonth : lastMonth;
+
+  let highlight = '', bars = '', labels = '';
+  vals.forEach((v, i) => {
+    const m = i + 1;
+    const cx = padL + groupW * i + groupW / 2;
+    const dim = selectedMonth && m !== selectedMonth;
+    if (selectedMonth === m){
+      highlight += `<rect x="${padL + groupW * i}" y="${padT}" width="${groupW}" height="${plotH}" fill="var(--invest-soft)"></rect>`;
+    }
+    labels += `<text class="axis-label" x="${cx}" y="${H - 6}" text-anchor="middle" opacity="${dim ? 0.5 : 1}">${MONTH_ABBR[i]}</text>`;
+    if (v === null) return;
+    const top = yOf(v), base = yOf(0);
+    const h = Math.max(base - top, 1);
+    const x0 = cx - barW / 2, r = Math.min(4, barW / 2, h);
+    // barra com só o topo arredondado, apoiada na linha de base
+    const d = `M${x0},${base} V${base - h + r} Q${x0},${base - h} ${x0 + r},${base - h} H${x0 + barW - r} Q${x0 + barW},${base - h} ${x0 + barW},${base - h + r} V${base} Z`;
+    bars += `<path class="bar-tip" data-month="${m}" data-tip="${MONTH_ABBR[i]}/${selectedYear} — Investido: ${BRL2.format(v)}" d="${d}" fill="var(--invest)" opacity="${dim ? 0.35 : 1}"></path>`;
+    if (m === labelMonth){
+      // perto da borda direita o rótulo alinha pela direita para não ser cortado
+      const nearRight = cx + 34 > W - padR;
+      const lx = nearRight ? cx + barW / 2 : cx;
+      labels += `<text class="val-label" x="${lx}" y="${Math.max(top - 7, 12)}" text-anchor="${nearRight ? 'end' : 'middle'}">${BRL.format(v)}</text>`;
+    }
+  });
+
+  svg.innerHTML = grid + highlight + bars + labels;
+  attachTooltips(svg);
+}
+
+// redesenha o gráfico quando a largura da tela muda (girar o celular, redimensionar a janela)
+let investResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(investResizeTimer);
+  investResizeTimer = setTimeout(() => {
+    if (!document.getElementById('app-shell').hidden) renderInvestChart();
+  }, 150);
+});
+
+function renderInvestList(){
+  let rows = entries.filter(e => isInvestment(e) && entryYear(e) === selectedYear);
+  if (selectedMonth) rows = rows.filter(e => entryMonth(e) === selectedMonth);
+  rows.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+  const net = rows.reduce((a, e) => a + investSigned(e), 0);
+  document.getElementById('invest-hint').textContent =
+    `${rows.length} ${rows.length === 1 ? 'lançamento' : 'lançamentos'} · ${net < 0 ? '−' : ''}${BRL.format(Math.abs(net))} em ${periodLabelText()}`;
+
+  const body = document.getElementById('inv-body');
+  if (!rows.length){
+    body.innerHTML = `<tr class="empty-row"><td colspan="5">Nenhum investimento em ${periodLabelText()}.</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map(e => {
+    const out = e.kind === 'resgate';
+    const m = entryMonth(e), y = entryYear(e);
+    return `
+    <tr>
+      <td class="tx-desc" title="${escapeHtml(e.desc)}">${escapeHtml(e.desc)}</td>
+      <td class="amt num invest${out ? ' is-out' : ''}">${out ? '−' : '+'} ${BRL2.format(Number(e.value) || 0)}</td>
+      <td class="cell-actions"><span class="row-actions"><button class="edit-btn" data-edit-inv="${e.id}" title="Editar investimento" aria-label="Editar investimento">✎</button><button class="del-btn" data-del="${e.id}" title="Remover lançamento" aria-label="Remover lançamento">✕</button></span></td>
+      <td class="row-break row-break-meta" aria-hidden="true"></td>
+      <td class="cell-month">${MONTH_ABBR[m - 1]}/${String(y).slice(2)}</td>
+      <td class="tag-cat">${out ? 'Resgate' : 'Aporte'}</td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', () => deleteEntry(btn.dataset.del));
+  });
+  body.querySelectorAll('[data-edit-inv]').forEach(btn => {
+    btn.addEventListener('click', () => openEditInvest(btn.dataset.editInv));
+  });
 }
 
 /* ============ Render: categorias ============ */
@@ -2079,6 +2327,8 @@ function renderAll(){
   renderKPIs();
   renderBarChart();
   renderSaldoChart();
+  renderInvestChart();
+  renderInvestList();
   renderCategories();
   renderExpenseTable();
   renderIncomeTable();
@@ -2087,6 +2337,7 @@ function renderAll(){
 /* ============ Modais ============ */
 let editingExpenseId = null;
 let editingIncomeId = null;
+let editingInvestId = null;
 
 function openModal(id){
   document.getElementById(id).hidden = false;
@@ -2097,6 +2348,7 @@ function closeModal(id){
   document.body.style.overflow = '';
   if (id === 'modal-expense') editingExpenseId = null;
   if (id === 'modal-income') editingIncomeId = null;
+  if (id === 'modal-invest') editingInvestId = null;
   // Fechar o modal de cores por qualquer caminho (clique fora, Esc, botão
   // Cancelar) sem ter salvo deve desfazer a pré-visualização ao vivo --
   // senão uma cor só "testada" ficaria aplicada mesmo sem o usuário ter
@@ -2232,6 +2484,61 @@ document.getElementById('form-income').addEventListener('submit', async ev => {
   }
   ev.target.reset();
   closeModal('modal-income');
+  const y = parseInt(date.slice(0,4),10);
+  const m = parseInt(date.slice(5,7),10);
+  if (!isNaN(y)) selectedYear = y;
+  if (!isNaN(m)) selectedMonth = m;
+  renderAll();
+});
+
+/* ---------- Investimento: abrir, editar, salvar ---------- */
+function setInvestModalMode(editing){
+  document.getElementById('inv-modal-title').textContent = editing ? 'Editar investimento' : 'Registrar investimento';
+  document.getElementById('inv-modal-sub').textContent = editing
+    ? 'Altere os dados e salve para atualizar este lançamento.'
+    : 'Lança um aporte (dinheiro aplicado) ou um resgate (dinheiro retirado).';
+  document.getElementById('inv-submit-btn').textContent = editing ? 'Salvar alterações' : 'Salvar investimento';
+}
+function openEditInvest(id){
+  const entry = findEntry(id);
+  if (!entry) return;
+  editingInvestId = id;
+  setInvestModalMode(true);
+  document.getElementById('inv-kind').value = entry.kind === 'resgate' ? 'resgate' : 'aporte';
+  document.getElementById('inv-desc').value = entry.desc;
+  document.getElementById('inv-value').value = entry.value;
+  document.getElementById('inv-date').value = entry.date;
+  openModal('modal-invest');
+  document.getElementById('inv-desc').focus();
+}
+document.getElementById('btn-open-invest').addEventListener('click', () => {
+  editingInvestId = null;
+  document.getElementById('form-invest').reset();
+  setInvestModalMode(false);
+  document.getElementById('inv-date').value = localTodayISO();
+  openModal('modal-invest');
+  document.getElementById('inv-desc').focus();
+});
+document.getElementById('form-invest').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const kind = document.getElementById('inv-kind').value === 'resgate' ? 'resgate' : 'aporte';
+  const desc = document.getElementById('inv-desc').value.trim().toUpperCase();
+  const value = parseFloat(document.getElementById('inv-value').value);
+  const date = document.getElementById('inv-date').value;
+  if (!desc || !isFinite(value) || value <= 0 || !date) return;
+  const whoName = (findUser(currentUser) || {}).name || currentUser || 'Alguém';
+  const verb = kind === 'resgate' ? 'um resgate' : 'um investimento';
+  if (editingInvestId){
+    await updateEntry(editingInvestId, { desc, value, date, kind });
+    showToast('Investimento atualizado.');
+    notifyOthers('Livro de Caixa', `${whoName} atualizou o investimento: ${desc} (${BRL2.format(value)})`);
+  } else {
+    await addEntry({ type:'investimento', kind, desc, value, category:null, date, createdAt: new Date().toISOString() });
+    showToast(kind === 'resgate' ? 'Resgate registrado.' : 'Investimento registrado.');
+    notifyOthers('Livro de Caixa', `${whoName} lançou ${verb}: ${desc} (${BRL2.format(value)})`);
+  }
+  ev.target.reset();
+  closeModal('modal-invest');
   const y = parseInt(date.slice(0,4),10);
   const m = parseInt(date.slice(5,7),10);
   if (!isNaN(y)) selectedYear = y;
