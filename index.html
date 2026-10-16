@@ -431,6 +431,19 @@
   }
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
+  #update-bar{
+    position:fixed; left:50%; transform:translateX(-50%); z-index:310;
+    bottom:calc(20px + env(safe-area-inset-bottom,0px)); width:min(440px, calc(100% - 32px));
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--pop-bg); color:var(--pop-ink); padding:10px 10px 10px 16px; border-radius:12px;
+    font-size:.84rem; box-shadow:var(--shadow);
+  }
+  #update-bar button{
+    border:none; border-radius:9px; padding:8px 14px; font:inherit; font-weight:700; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); white-space:nowrap;
+  }
+  #update-bar button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
   /* ---------- Tela de login ---------- */
   #auth-gate{
     min-height:100dvh; min-height:100vh; display:flex; align-items:center; justify-content:center;
@@ -486,6 +499,10 @@
 
 <div id="tooltip" role="status"></div>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="update-bar" role="status" hidden>
+  <span>Há uma versão nova do Livro de Caixa.</span>
+  <button type="button" id="update-bar-btn">Atualizar</button>
+</div>
 
 <div id="auth-gate">
   <form class="auth-card" id="auth-form">
@@ -1597,7 +1614,7 @@ function monthEntries(year, month){
 function monthTotals(year, month){
   const h = histMonth(year, month);
   /* Só receitas e despesas entram aqui. Investimentos têm o próprio total
-     (ver investTotalUntil) e não contam como despesa nem mexem no saldo. */
+     (ver investTotalAt) e não contam como despesa nem mexem no saldo. */
   const me = monthEntries(year, month).filter(e => e.type === 'receita' || e.type === 'despesa');
   let income = h ? (h.ti || 0) : 0;
   let expense = h ? (h.te || 0) : 0;
@@ -2815,6 +2832,64 @@ const FIREBASE_CONFIG = {
 })();
 
 document.getElementById('auth-pass').focus();
+
+/* ============ Atualização automática ============
+   Um aparelho com o app aberto há tempo (no iPhone ele fica em segundo plano)
+   continua rodando a versão antiga mesmo depois de uma atualização, e pode
+   calcular errado dados novos que ele não conhece. Por isso o app confere se
+   existe versão mais nova: ao abrir, ao voltar do segundo plano e a cada
+   10 minutos. Se houver, recarrega sozinho quando não há nada sendo digitado;
+   senão mostra uma barra "Atualizar". Só no link do GitHub Pages (no
+   claude.ai a página já é sempre servida na versão mais nova). */
+const APP_VERSION = '2026101603';
+const UPDATE_RELOAD_KEY = 'livrocaixa_update_tried';
+
+function updateCheckEnabled(){
+  const h = location.hostname;
+  return location.protocol.startsWith('http') && (h.endsWith('github.io') || h === 'localhost' || h === '127.0.0.1');
+}
+function isBusyTyping(){
+  if ([...document.querySelectorAll('.modal-backdrop')].some(bd => !bd.hidden)) return true;
+  const a = document.activeElement;
+  return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && String(a.value || '').trim() !== '');
+}
+function reloadToVersion(v){
+  try{ sessionStorage.setItem(UPDATE_RELOAD_KEY, v); }catch(e){}
+  // o parâmetro na URL força o navegador a buscar a página nova em vez da guardada
+  location.replace(location.pathname + '?v=' + v + location.hash);
+}
+function showUpdateBar(v){
+  const bar = document.getElementById('update-bar');
+  bar.hidden = false;
+  document.getElementById('update-bar-btn').onclick = () => reloadToVersion(v);
+}
+let updateChecking = false;
+async function checkForUpdate(){
+  if (!updateCheckEnabled() || updateChecking || !navigator.onLine) return;
+  updateChecking = true;
+  try{
+    const res = await fetch(location.pathname + '?vcheck=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const m = (await res.text()).match(/const APP_VERSION = '(\d+)'/);
+    const latest = m && m[1];
+    if (!latest || latest <= APP_VERSION) return; // igual ou mais antiga (cache do servidor): nada a fazer
+    let tried = null;
+    try{ tried = sessionStorage.getItem(UPDATE_RELOAD_KEY); }catch(e){}
+    // já tentou recarregar para essa versão e continuou na antiga: não fica em loop, só oferece o botão
+    if (tried === latest || isBusyTyping()) showUpdateBar(latest);
+    else reloadToVersion(latest);
+  }catch(e){
+    /* sem internet ou servidor fora: tenta de novo depois */
+  }finally{
+    updateChecking = false;
+  }
+}
+if (updateCheckEnabled()){
+  setTimeout(checkForUpdate, 1500);
+  setInterval(checkForUpdate, 10 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForUpdate(); });
+  window.addEventListener('pageshow', ev => { if (ev.persisted) checkForUpdate(); });
+}
 </script>
 
 </html>
