@@ -1698,11 +1698,22 @@ function accountYieldInMonth(acct, y, m){
   const cur = accountBalanceAt(acct, monthEndISO(y, m));
   const [py, pm] = prevYM(y, m);
   const prev = accountBalanceAt(acct, monthEndISO(py, pm));
-  if (!cur.has || !prev.has) return 0;
-  const flowsInMonth = entries
-    .filter(e => isInvestment(e) && acctOf(e) === acct && e.kind !== 'saldo' && entryYear(e) === y && entryMonth(e) === m)
+  if (!cur.has) return 0;
+  const inMonth = entries.filter(e => isInvestment(e) && acctOf(e) === acct && entryYear(e) === y && entryMonth(e) === m);
+  if (prev.has){
+    const flowsInMonth = inMonth.filter(e => e.kind !== 'saldo').reduce((a, e) => a + flowSigned(e), 0);
+    return cur.value - prev.value - flowsInMonth;
+  }
+  /* Conta começou neste mês (não tem saldo no mês anterior): o ponto de
+     partida é o PRIMEIRO saldo informado no mês, e o rendimento é o que a
+     conta cresceu desde ele, descontando aportes/resgates feitos depois. */
+  const snaps = inMonth.filter(e => e.kind === 'saldo')
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  if (!snaps.length) return 0;
+  const first = snaps[0];
+  const flowsAfter = inMonth.filter(e => e.kind !== 'saldo' && String(e.date) > String(first.date))
     .reduce((a, e) => a + flowSigned(e), 0);
-  return cur.value - prev.value - flowsInMonth;
+  return cur.value - (Number(first.value) || 0) - flowsAfter;
 }
 /* Total de todas as contas no fim do mês */
 function investTotalAt(y, m){
@@ -1716,7 +1727,8 @@ function investYield(y, month, acct){
   accts.forEach(a => months.forEach(m => { total += accountYieldInMonth(a, y, m); }));
   return total;
 }
-function signedBRL(v){ return `${v < 0 ? '−' : '+'} ${BRL.format(Math.abs(v))}`; }
+// investimentos sempre com centavos: rendimentos costumam ser de poucos reais
+function signedBRL(v){ return `${v < 0 ? '−' : '+'} ${BRL2.format(Math.abs(v))}`; }
 
 function yearSummary(year){
   let income = 0, expense = 0, monthsWithData = 0;
@@ -2003,7 +2015,7 @@ function renderKPIs(){
   const investCard = `
     <div class="kpi kpi-invest">
       <span class="label">Investimento total</span>
-      <span class="value num">${investTotal < 0 ? '−' : ''}${BRL.format(Math.abs(investTotal))}</span>
+      <span class="value num">${investTotal < 0 ? '−' : ''}${BRL2.format(Math.abs(investTotal))}</span>
       <span class="sub">${investSub}</span>
     </div>`;
 
@@ -2196,9 +2208,9 @@ function renderInvestChart(){
     bars += `<path class="bar-tip" data-month="${m}" data-tip="${MONTH_ABBR[i]}/${selectedYear} — Total: ${BRL2.format(v)} · rendeu ${rend < 0 ? '−' : '+'} ${BRL2.format(Math.abs(rend))}" d="${d}" fill="var(--invest)" opacity="${dim ? 0.35 : 1}"></path>`;
     if (m === labelMonth){
       // perto da borda direita o rótulo alinha pela direita para não ser cortado
-      const nearRight = cx + 34 > W - padR;
+      const nearRight = cx + 48 > W - padR; // rótulo com centavos é mais largo
       const lx = nearRight ? cx + barW / 2 : cx;
-      labels += `<text class="val-label" x="${lx}" y="${Math.max(top - 7, 12)}" text-anchor="${nearRight ? 'end' : 'middle'}">${BRL.format(v)}</text>`;
+      labels += `<text class="val-label" x="${lx}" y="${Math.max(top - 7, 12)}" text-anchor="${nearRight ? 'end' : 'middle'}">${BRL2.format(v)}</text>`;
     }
   });
 
@@ -2231,7 +2243,7 @@ function renderInvestList(){
     const when = snap ? `saldo de ${formatDueDate(snap.date)}/${String(snap.date).slice(2,4)}` : (bal.has ? 'só aportes' : 'sem saldo informado');
     return `<div class="paid-stat invest-acct">
       <span class="paid-stat-label">${escapeHtml(a)}</span>
-      <span class="paid-stat-value num">${bal.has ? BRL.format(bal.value) : '—'}</span>
+      <span class="paid-stat-value num">${bal.has ? BRL2.format(bal.value) : '—'}</span>
       <span class="invest-acct-sub">${bal.has ? `rendeu <strong class="${rend < 0 ? 'neg' : 'pos'}">${signedBRL(rend)}</strong> ${periodWord}` : ''}</span>
       <span class="invest-acct-sub">${when}</span>
     </div>`;
@@ -2899,7 +2911,7 @@ document.getElementById('auth-pass').focus();
    10 minutos. Se houver, recarrega sozinho quando não há nada sendo digitado;
    senão mostra uma barra "Atualizar". Só no link do GitHub Pages (no
    claude.ai a página já é sempre servida na versão mais nova). */
-const APP_VERSION = '2026101605';
+const APP_VERSION = '2026102101';
 const UPDATE_RELOAD_KEY = 'livrocaixa_update_tried';
 
 function updateCheckEnabled(){
