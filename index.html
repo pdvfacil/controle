@@ -1589,7 +1589,7 @@ function initClosedStorage(){
 
 function isMonthClosed(year, month){ return !!closedMonths[monthKey(year, month)]; }
 
-async function closeMonth(year, month){
+async function closeMonth(year, month, opts = {}){
   const key = monthKey(year, month);
   closedMonths = { ...closedMonths, [key]: true };
 
@@ -1597,7 +1597,7 @@ async function closeMonth(year, month){
     try{
       await db.collection('livro_caixa_closed_months').doc(key).set({ closed:true, closedAt: new Date().toISOString() });
       renderAll();
-      await autoSeedFromMonth(year, month).catch(e => console.warn('auto-seed pós-encerramento falhou', e));
+      await autoSeedFromMonth(year, month, opts).catch(e => console.warn('auto-seed pós-encerramento falhou', e));
       return;
     }catch(e){
       console.warn('closed_months write failed, using local fallback', e);
@@ -1606,7 +1606,7 @@ async function closeMonth(year, month){
   }
   saveClosedLocal(closedMonths);
   renderAll();
-  await autoSeedFromMonth(year, month).catch(e => console.warn('auto-seed pós-encerramento falhou', e));
+  await autoSeedFromMonth(year, month, opts).catch(e => console.warn('auto-seed pós-encerramento falhou', e));
 }
 
 /* ============ Agregação de dados ============ */
@@ -1825,7 +1825,21 @@ function hasExpenseData(year, month){
    em que o usuário clica "Enviar e encerrar mês" (ancorada no mês que ele
    acabou de encerrar, projetando o seguinte na hora, sem esperar o próximo
    carregamento da página). */
-async function autoSeedFromMonth(srcY, srcM){
+/* Leva um vencimento (YYYY-MM-DD) para o mesmo dia no mês (ny, nm); se o
+   dia não existir (ex.: 31 em novembro) usa o último dia do mês. */
+function shiftDueToMonth(iso, ny, nm){
+  const day = parseInt(String(iso || '').slice(8, 10), 10);
+  if (!day) return null;
+  const lastDay = new Date(ny, nm, 0).getDate();
+  return `${ny}-${String(nm).padStart(2,'0')}-${String(Math.min(day, lastDay)).padStart(2,'0')}`;
+}
+
+/* opts.fromClose: chamada pelo botão "Enviar e encerrar mês". Nesse caso a
+   decisão de copiar olha só o banco (o mês seguinte já tem despesas? então
+   não copia de novo) e ignora o registro local do aparelho — esse registro
+   podia ter ficado com o mês marcado como "já copiado" por versões antigas
+   (que copiavam pela data) e bloqueava a cópia em silêncio. */
+async function autoSeedFromMonth(srcY, srcM, opts = {}){
   if (!hasExpenseData(srcY, srcM)) return; // nada a copiar ainda desse mês
 
   let ny = srcY, nm = srcM + 1;
@@ -1833,25 +1847,30 @@ async function autoSeedFromMonth(srcY, srcM){
 
   const key = monthKey(ny, nm);
   const log = loadAutoseedLog();
-  if (log.includes(key)) return;
-  if (hasExpenseData(ny, nm)) return;
+  if (!opts.fromClose && log.includes(key)) return;
+  if (hasExpenseData(ny, nm)) return; // o mês seguinte já tem despesas: não duplica
 
   const items = [];
   const h = histMonth(srcY, srcM);
   if (h) h.ei.forEach(it => items.push({ desc: it.d, value: it.v, category: it.c }));
   monthEntries(srcY, srcM).filter(e => e.type === 'despesa').forEach(e => {
-    items.push({ desc: e.desc, value: Number(e.value) || 0, category: e.category || 'Outros' });
+    items.push({
+      desc: e.desc, value: Number(e.value) || 0, category: e.category || 'Outros',
+      // vencimento digitado vai junto, no mesmo dia do mês seguinte; o que o
+      // sistema preencheu sozinho ao pagar (dueAuto) não é vencimento de verdade
+      dueDate: (e.dueDate && !e.dueAuto) ? shiftDueToMonth(e.dueDate, ny, nm) : null
+    });
   });
   if (!items.length) return;
 
-  log.push(key);
-  saveAutoseedLog(log);
+  if (!log.includes(key)){ log.push(key); saveAutoseedLog(log); }
 
   const dateStr = `${ny}-${String(nm).padStart(2,'0')}-01`;
   for (const it of items){
-    await addEntry({ type:'despesa', desc: it.desc, value: it.value, category: it.category || 'Outros', date: dateStr, seeded: true });
+    await addEntry({ type:'despesa', desc: it.desc, value: it.value, category: it.category || 'Outros',
+      date: dateStr, dueDate: it.dueDate || null, seeded: true, createdAt: new Date().toISOString() });
   }
-  showToast(`Despesas de ${MONTH_FULL[srcM-1]} copiadas como base para ${MONTH_FULL[nm-1]}/${ny} — edite ou exclua o que mudar.`);
+  showToast(`${items.length} despesas de ${MONTH_FULL[srcM-1]} copiadas como base para ${MONTH_FULL[nm-1]}/${ny} — edite ou exclua o que mudar.`);
 }
 
 async function autoSeedNextMonthExpenses(){
@@ -2357,7 +2376,7 @@ function renderExpenseTable(){
     if (closeBtn){
       closeBtn.addEventListener('click', () => {
         if (confirm(`Encerrar ${MONTH_FULL[selectedMonth-1]}/${selectedYear}? Depois disso não será mais possível alterar os status de pago/a pagar desse mês.`)){
-          closeMonth(selectedYear, selectedMonth);
+          closeMonth(selectedYear, selectedMonth, { fromClose: true });
         }
       });
     }
@@ -2911,7 +2930,7 @@ document.getElementById('auth-pass').focus();
    10 minutos. Se houver, recarrega sozinho quando não há nada sendo digitado;
    senão mostra uma barra "Atualizar". Só no link do GitHub Pages (no
    claude.ai a página já é sempre servida na versão mais nova). */
-const APP_VERSION = '2026102101';
+const APP_VERSION = '2026110101';
 const UPDATE_RELOAD_KEY = 'livrocaixa_update_tried';
 
 function updateCheckEnabled(){
