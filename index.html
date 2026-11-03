@@ -2327,6 +2327,7 @@ function periodLabelText(){
   return selectedMonth ? `${MONTH_FULL[selectedMonth-1]}/${selectedYear}` : `${selectedYear}`;
 }
 
+let seedingNow = false; // cópia manual para o mês seguinte em andamento
 let lastExpensePaidTotal = 0; // total já pago das despesas do período em exibição (usado no saldo em caixa)
 
 function renderExpenseTable(){
@@ -2356,7 +2357,14 @@ function renderExpenseTable(){
     let closeBar = '';
     if (selectedMonth){
       if (isMonthClosed(selectedYear, selectedMonth)){
-        closeBar = `<div class="month-close-bar is-closed">🔒 Mês encerrado — os status de pagamento não podem mais ser alterados.</div>`;
+        // Mês encerrado cujo mês seguinte ficou sem despesas (a cópia
+        // automática não rodou): oferece fazer a cópia agora.
+        let ny = selectedYear, nm = selectedMonth + 1;
+        if (nm > 12){ nm = 1; ny += 1; }
+        const canSeed = rows.length && !hasExpenseData(ny, nm);
+        closeBar = canSeed
+          ? `<div class="month-close-bar is-closed"><span>🔒 Mês encerrado. ${MONTH_FULL[nm-1]} ainda está sem despesas.</span><button type="button" class="btn-close-month" id="btn-seed-next">Copiar despesas para ${MONTH_FULL[nm-1]}</button></div>`
+          : `<div class="month-close-bar is-closed">🔒 Mês encerrado — os status de pagamento não podem mais ser alterados.</div>`;
       } else if (rows.length){
         closeBar = `<div class="month-close-bar"><span>Quando fechar as contas do mês, encerre para travar os status.</span><button type="button" class="btn-close-month" id="btn-close-month">Enviar e encerrar mês</button></div>`;
       }
@@ -2377,6 +2385,28 @@ function renderExpenseTable(){
       closeBtn.addEventListener('click', () => {
         if (confirm(`Encerrar ${MONTH_FULL[selectedMonth-1]}/${selectedYear}? Depois disso não será mais possível alterar os status de pago/a pagar desse mês.`)){
           closeMonth(selectedYear, selectedMonth, { fromClose: true });
+        }
+      });
+    }
+    const seedBtn = document.getElementById('btn-seed-next');
+    if (seedBtn){
+      seedBtn.addEventListener('click', async () => {
+        if (seedingNow) return; // evita cópia em dobro com toque duplo
+        seedingNow = true;
+        seedBtn.disabled = true;
+        seedBtn.textContent = 'Copiando…';
+        const sy = selectedYear, sm = selectedMonth;
+        try{
+          await autoSeedFromMonth(sy, sm, { fromClose: true });
+          let ny = sy, nm = sm + 1;
+          if (nm > 12){ nm = 1; ny += 1; }
+          selectedYear = ny; selectedMonth = nm; // já mostra o mês com as cópias
+        }catch(e){
+          console.warn('cópia para o mês seguinte falhou', e);
+          showToast('Não foi possível copiar agora. Tente de novo.');
+        }finally{
+          seedingNow = false;
+          renderAll();
         }
       });
     }
@@ -2930,7 +2960,7 @@ document.getElementById('auth-pass').focus();
    10 minutos. Se houver, recarrega sozinho quando não há nada sendo digitado;
    senão mostra uma barra "Atualizar". Só no link do GitHub Pages (no
    claude.ai a página já é sempre servida na versão mais nova). */
-const APP_VERSION = '2026110101';
+const APP_VERSION = '2026110301';
 const UPDATE_RELOAD_KEY = 'livrocaixa_update_tried';
 
 function updateCheckEnabled(){
